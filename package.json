@@ -1,12 +1,12 @@
 {
   "version": "0.0.1",
-  "name": "jbrowse-plugin-template",
+  "name": "jbrowse-plugin-isoform-inspector",
   "keywords": [
     "jbrowse",
     "jbrowse2"
   ],
   "main": "dist/index.js",
-  "module": "dist/jbrowse-plugin-template.esm.js",
+  "module": "dist/jbrowse-plugin-isoform-inspector.esm.js",
   "typings": "dist/index.d.ts",
   "files": [
     "dist",
@@ -19,7 +19,7 @@
     },
     "jbrowse": {
       "plugin": {
-        "name": "Template"
+        "name": "IsoformInspector"
       }
     }
   },
@@ -47,7 +47,7 @@
     "postversion": "git push --follow-tags"
   },
   "jbrowse-plugin": {
-    "name": "Template"
+    "name": "IsoformInspector"
   },
   "prettier": {
     "semi": false,
