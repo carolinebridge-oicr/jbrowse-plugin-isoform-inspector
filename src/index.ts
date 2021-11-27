@@ -7,6 +7,8 @@ import {
   ReactComponent as HelloViewReactComponent,
   stateModel as helloViewStateModel,
 } from './HelloView'
+import { IsoformInspector } from './IsoformInspector/IsoformInspector'
+import { default as IsoformInspectorModel } from './IsoformInspector/model'
 
 export default class TemplatePlugin extends Plugin {
   name = 'Template'
@@ -15,9 +17,9 @@ export default class TemplatePlugin extends Plugin {
   install(pluginManager: PluginManager) {
     pluginManager.addViewType(() => {
       return new ViewType({
-        name: 'HelloView',
-        stateModel: helloViewStateModel,
-        ReactComponent: HelloViewReactComponent,
+        name: 'IsoformInspector',
+        stateModel: IsoformInspectorModel(),
+        ReactComponent: IsoformInspector,
       })
     })
   }
@@ -25,9 +27,9 @@ export default class TemplatePlugin extends Plugin {
   configure(pluginManager: PluginManager) {
     if (isAbstractMenuManager(pluginManager.rootModel)) {
       pluginManager.rootModel.appendToSubMenu(['File', 'Add'], {
-        label: 'Open Hello!',
+        label: 'Open Isoform Inspector!',
         onClick: (session: AbstractSessionModel) => {
-          session.addView('HelloView', {})
+          session.addView('IsoformInspector', {})
         },
       })
     }

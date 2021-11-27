@@ -42,6 +42,7 @@ export default function IsoformInspector() {
             },
         }))
         .views(self => ({
+            //@ts-ignore
             heatmapData(chartLib: string) {
                 if (chartLib === 'nivo') {
                     return getNivoHmData(self.dataState, self.data.subjectType, self.data.subjects);
