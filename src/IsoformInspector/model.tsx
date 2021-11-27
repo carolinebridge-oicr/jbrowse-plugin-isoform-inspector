@@ -21,6 +21,9 @@ export default function IsoformInspector() {
             error: (undefined as unknown) as any
         }))
         .actions(self => ({
+            // unused but required by your view
+            setWidth() {},
+
             setDisplayName(displayName: string) {
                 self.displayName = displayName;
             },
