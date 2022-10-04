@@ -12,6 +12,7 @@ project.
 - [git](https://git-scm.com/downloads)
 - [Node.js](https://nodejs.org/en/download/) (version 10 or greater)
 - [yarn](https://yarnpkg.com/en/docs/install) (or npm which comes with Node.js)
+- [JBrowse 2](https://github.com/gmod/jbrowse-components) (version 2.0 or greater)
 
 ### Create a new project from this template
 
@@ -73,6 +74,8 @@ To develop against JBrowse Web:
 - When you make changes to your plugin, it will automatically be re-built.
   You can then refresh JBrowse Web to see the changes.
 
+**Note:** The current version of `jbrowse-plugin-template` is only compatible with "JBrowse 2" v2.0 or greater. If you are developing for a version of "JBrowse 2" v1.x, please consider upgrading, or you will have to manually downgrade the package dependencies in this template to ensure compatibility.
+
 ### Testing
 
 To test your plugin, there are several commands available:
@@ -87,7 +90,7 @@ plugin already included in the configuration. Your plugin must also be running
 
 Runs any unit tests defined during plugin development.
 
-#### `yarn test:cy` or `npm run test:cy`
+#### `yarn cypress:run` or `npm run cypress:run`
 
 Runs the [cypress](https://www.cypress.io/) integration tests for your plugin.
 Both the plugin and `browse` must already be running.
