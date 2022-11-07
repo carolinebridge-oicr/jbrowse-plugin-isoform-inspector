@@ -2,10 +2,10 @@ import { types, Instance, flow } from 'mobx-state-tree'
 import { createContext, useContext } from 'react'
 import { fetchLocalData, getNivoHmData, getVisxHmData } from './FetchData'
 
-export default function IsoformInspector() {
+export default function IsoformInspectorView() {
   return types
-    .model('IsoformInspector', {
-      type: types.literal('IsoformInspector'),
+    .model('IsoformInspectorView', {
+      type: types.literal('IsoformInspectorView'),
       displayName: 'Transcript Isoform Inspector',
       geneId: '',
       colors: 'greens',
@@ -72,14 +72,14 @@ export default function IsoformInspector() {
     }))
 }
 
-export type IsoformInspectorStateModel = ReturnType<typeof IsoformInspector>
+export type IsoformInspectorStateModel = ReturnType<typeof IsoformInspectorView>
 export type IsoformInspectorModel = Instance<IsoformInspectorStateModel>
 
 let _store: any = null
 
 export function initializeStore() {
-  _store = IsoformInspector().create({
-    type: 'IsoformInspector',
+  _store = IsoformInspectorView().create({
+    type: 'IsoformInspectorView',
     displayName: 'Transcript Isoform Inspector',
     geneId: '',
     colors: 'greens',
@@ -91,12 +91,12 @@ export function initializeStore() {
   return _store
 }
 
-export type IsoformInspectorInstance = Instance<typeof IsoformInspector>
+export type IsoformInspectorInstance = Instance<typeof IsoformInspectorView>
 const IsoformInspectorStoreContext =
   createContext<null | IsoformInspectorInstance>(null)
 export const Provider = IsoformInspectorStoreContext.Provider
 
-export function useStore(): Instance<typeof IsoformInspector> {
+export function useStore(): Instance<typeof IsoformInspectorView> {
   const store = useContext(IsoformInspectorStoreContext)
   if (store === null) {
     throw new Error('Store cannot be null, please add a context provider')

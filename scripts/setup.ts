@@ -51,10 +51,6 @@ async function main() {
 }
 
 function updatePackageJSON(
-<<<<<<< HEAD
-  tsdxName: string,
-=======
->>>>>>> jbrowse-plugin-template/main
   pluginName: string,
   packageJSON: JSONSchemaForNPMPackageJsonFiles,
 ) {
@@ -65,12 +61,6 @@ function updatePackageJSON(
   }
   packageJSON.config.jbrowse.plugin.name = pluginName
 
-<<<<<<< HEAD
-  // 2. In the "module" field, replace jbrowse-plugin-my-project with the name of your project (leave off the @myscope if using a scoped package name) (you can double-check that the filename is correct after running the build step below and comparing the filename to the file in the dist/ folder)
-  packageJSON.module = `dist/${tsdxName}.esm.js`
-
-=======
->>>>>>> jbrowse-plugin-template/main
   // this overwrites package.json
   writeJSON('package.json', packageJSON)
 }
@@ -79,38 +69,22 @@ function updatePackageJSON(
 async function updateSrcIndex(pluginClassName: string) {
   const indexFilePath = path.join('src', 'index.ts')
   let indexFile = await fsPromises.readFile(indexFilePath, 'utf-8')
-<<<<<<< HEAD
-  indexFile = indexFile.replace(/Template/g, pluginClassName)
-=======
   indexFile = indexFile.replace(/TemplatePlugin/g, `${pluginClassName}Plugin`)
->>>>>>> jbrowse-plugin-template/main
   fsPromises.writeFile(indexFilePath, indexFile)
 }
 
 // replace default plugin name and url with project name and dist file
-<<<<<<< HEAD
-async function updateJBrowseConfig(tsdxName: string, pluginName: string) {
-=======
 async function updateJBrowseConfig(packageName: string, pluginName: string) {
->>>>>>> jbrowse-plugin-template/main
   const jbrowseConfig = await readJSON(
     path.join(__dirname, '..', 'jbrowse_config.json'),
   )
   jbrowseConfig.plugins[0].name = pluginName
-<<<<<<< HEAD
-  jbrowseConfig.plugins[0].url = `http://localhost:9000/dist/${tsdxName}.umd.development.js`
-=======
   jbrowseConfig.plugins[0].url = `http://localhost:9000/dist/${packageName}.umd.development.js`
->>>>>>> jbrowse-plugin-template/main
   writeJSON('jbrowse_config.json', jbrowseConfig)
 }
 
 // replace default plugin name and url with project name and dist file
-<<<<<<< HEAD
-async function updateExampleFixture(tsdxName: string, pluginName: string) {
-=======
 async function updateExampleFixture(packageName: string, pluginName: string) {
->>>>>>> jbrowse-plugin-template/main
   const fixtureLocation = path.join(
     __dirname,
     '..',
@@ -120,11 +94,7 @@ async function updateExampleFixture(packageName: string, pluginName: string) {
   )
   const exampleFixture = await readJSON(fixtureLocation)
   exampleFixture.plugins[0].name = pluginName
-<<<<<<< HEAD
-  exampleFixture.plugins[0].url = `http://localhost:9000/dist/${tsdxName}.umd.development.js`
-=======
   exampleFixture.plugins[0].url = `http://localhost:9000/dist/${packageName}.umd.development.js`
->>>>>>> jbrowse-plugin-template/main
   writeJSON(fixtureLocation, exampleFixture)
 }
 
@@ -196,14 +166,10 @@ function toPascalCase(string: string) {
       ($1, $2, $3) => `${$2.toUpperCase() + $3.toLowerCase()}`,
     )
     .replace(new RegExp(/\s/, 'g'), '')
-    .replace(new RegExp(/\w/), s => s.toUpperCase())
+    .replace(new RegExp(/\w/), (s) => s.toUpperCase())
 }
 
-<<<<<<< HEAD
-function getTsdxPackageName(name: string) {
-=======
 function getSafePackageName(name: string) {
->>>>>>> jbrowse-plugin-template/main
   return name
     .toLowerCase()
     .replace(/(^@.*\/)|((^[^a-zA-Z]+)|[^\w.-])|([^a-zA-Z0-9]+$)/g, '')

@@ -1,32 +1,26 @@
 import Plugin from '@jbrowse/core/Plugin'
 import PluginManager from '@jbrowse/core/PluginManager'
-import ViewType from '@jbrowse/core/pluggableElementTypes/ViewType'
 import { AbstractSessionModel, isAbstractMenuManager } from '@jbrowse/core/util'
 import { version } from '../package.json'
 
-import { IsoformInspector } from './IsoformInspector/IsoformInspector'
-import { default as IsoformInspectorModel } from './IsoformInspector/model'
+import IsoformInspectorViewF from './IsoformInspectorView'
 
-export default class TemplatePlugin extends Plugin {
-  name = 'Template'
+export default class IsoformInspectorPlugin extends Plugin {
+  name = 'IsoformInspector'
   version = version
 
   install(pluginManager: PluginManager) {
-    pluginManager.addViewType(() => {
-      return new ViewType({
-        name: 'IsoformInspector',
-        stateModel: IsoformInspectorModel(),
-        ReactComponent: IsoformInspector,
-      })
-    })
+    pluginManager.addViewType(() =>
+      pluginManager.jbrequire(IsoformInspectorViewF),
+    )
   }
 
   configure(pluginManager: PluginManager) {
     if (isAbstractMenuManager(pluginManager.rootModel)) {
-      pluginManager.rootModel.appendToSubMenu(['File', 'Add'], {
-        label: 'Open Isoform Inspector!',
+      pluginManager.rootModel.appendToMenu('Add', {
+        label: 'Isoform Inspector view',
         onClick: (session: AbstractSessionModel) => {
-          session.addView('IsoformInspector', {})
+          session.addView('IsoformInspectorView', {})
         },
       })
     }

@@ -1,8 +1,0 @@
-{
-  "plugins": [
-    {
-      "name": "IsoformInspector",
-      "url": "http://localhost:9000/dist/jbrowse-plugin-isoform-inspector.umd.development.js"
-    }
-  ]
-}
