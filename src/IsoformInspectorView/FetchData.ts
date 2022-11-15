@@ -79,16 +79,6 @@ const subjectIds = [
   'SA507587',
 ]
 
-interface Bin {
-  bin: number
-  count: number
-}
-
-export interface BinDataEntry {
-  bin: number
-  bins: Bin[]
-}
-
 export interface Feature {
   feature_id: string
   value: number
@@ -97,13 +87,6 @@ export interface Feature {
 export interface Subject {
   subject_id: string
   features: Feature[]
-}
-
-export interface HMDataEntry {
-  subject: string
-  features: string[]
-  data: any[]
-  visxData: BinDataEntry[]
 }
 
 //@ts-ignore
@@ -118,32 +101,18 @@ export function getNivoHmData(
   }
 }
 
-//@ts-ignore
-export function getVisxHmData(
-  dataState: string,
-  subjectType: string,
-  subjects: Array<Subject>,
-) {
-  if (dataState === 'done') {
-    const { visxData } = getHeatmapData(subjectType, subjects)
-    return visxData
-  }
-}
-
 export async function fetchLocalData(geneId: string) {
   var subjectType: string = 'sample'
   var featureType: string = 'junction_quantifications'
   // var observationType: string = 'read_counts';
   var subjects: Array<Subject> = []
-
   var fetchAll = new Promise(async (resolve, reject) => {
     subjectIds.reduce(async (memo, subj) => {
       await memo
-
       const dataPath = [
         localDataFolder,
+        'observations',
         geneId,
-        'subjects',
         subj,
         'observations',
         featureType + '.json',
@@ -158,8 +127,8 @@ export async function fetchLocalData(geneId: string) {
         .then((response) => {
           return response.json()
         })
-        .then((myJson) => {
-          subjects.push(myJson.subjects[0])
+        .then((jsonObj) => {
+          subjects.push(jsonObj.subjects[0])
           if (subjectIds.length === subjects.length) {
             resolve(1)
           }
@@ -174,7 +143,6 @@ export async function fetchLocalData(geneId: string) {
 function getHeatmapData(subjectType: string, subjects: Array<Subject>) {
   var keys: Array<string> = []
   var nivoData: any[] = []
-  var visxData: BinDataEntry[] = []
 
   subjects.forEach((subj, i) => {
     var count_info: { [key: string]: any } = {}
@@ -185,33 +153,25 @@ function getHeatmapData(subjectType: string, subjects: Array<Subject>) {
         keys.push(feature.feature_id)
       }
 
-      if (i === 0) {
-        visxData.push({
-          bin: j,
-          bins: [
-            {
-              bin: subjects.length - i - 1,
-              count: feature.value,
-            },
-          ],
-        })
-      } else {
-        visxData[j].bins.push({
-          bin: subjects.length - i - 1,
-          count: feature.value,
-        })
-      }
-
       count_info[feature.feature_id] = feature.value
     })
 
-    nivoData.push(count_info)
+    let nivoDataObj = []
+
+    for (const [key, value] of Object.entries(count_info)) {
+      if (key !== 'sample') {
+        nivoDataObj.push({
+          x: key,
+          y: value,
+        })
+      }
+    }
+    nivoData.push({ id: count_info.sample, data: nivoDataObj })
   })
 
   return {
     subject: 'sample',
     features: keys,
     data: nivoData,
-    visxData: visxData,
   }
 }

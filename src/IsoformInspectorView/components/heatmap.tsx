@@ -1,45 +1,75 @@
 import React from 'react'
 import { observer } from 'mobx-react-lite'
-import { HeatMapCanvas } from '@nivo/heatmap'
+import { HeatMapCanvas } from '@nivo/heatmap' // HeatMap is SVG based, may be switched to use when user downloads the chart
 
-export const Heatmap = ({ model }: { model: any }) => {
-  if (!model.geneId) {
-    return <p>Please choose a gene!</p>
-  }
-
-  if (model.dataState !== 'done') {
+export const Heatmap = ({
+  model,
+  width,
+  height,
+}: {
+  model: any
+  width: number
+  height: number
+}) => {
+  if (model.dataState !== 'done' || !model.geneId) {
     return null
   }
 
-  const { subject, features, data } = model.heatmapData('nivo')
-
   return (
-    <></>
-    // <HeatMapCanvas
-    //   indexBy={subject}
-    //   keys={features}
-    //   data={data}
-    //   width={model.width}
-    //   height={model.height}
-    //   colors={model.colors}
-    //   enableLabels={false}
-    //   hoverTarget="rowColumn"
-    //   cellHoverOpacity={1}
-    //   cellHoverOthersOpacity={0.5}
-    //   margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-    //   axisTop={null}
-    //   axisRight={null}
-    //   axisBottom={null}
-    //   axisLeft={null}
-    //   cellOpacity={1}
-    //   cellBorderColor={{ from: 'color', modifiers: [['darker', 0.4]] }}
-    //   labelTextColor={{ from: 'color', modifiers: [['darker', 1.8]] }}
-    //   tooltip={({ xKey, yKey, value }) => (
-    //     <strong style={{ color: 'black' }}>
-    //       {xKey} / {yKey}: {value}
-    //     </strong>
-    //   )}
-    // />
+    <svg width={width} height={height}>
+      <foreignObject x={0} y={0} width={width} height={height}>
+        <HeatMapCanvas
+          data={model.nivoData.data}
+          width={width}
+          height={height}
+          axisBottom={null}
+          axisTop={null}
+          axisRight={null}
+          axisLeft={null}
+          enableLabels={false}
+          inactiveOpacity={0.95}
+          margin={{ top: 50, right: 2, bottom: 2, left: 2 }}
+          colors={{
+            type: 'sequential',
+            scheme: 'oranges', // TODO: colour of the heatmap and annotations to be freely selectable
+            minValue: 0,
+            maxValue: 230,
+          }}
+          tooltip={(value) => {
+            // setting tooltip values
+            const { data, serieId, x, y } = value.cell
+            const feature = data.x
+            const score = data.y
+            model.setCurrentPanel('heatmap')
+            model.setCurrentX(x)
+            model.setCurrentY(y)
+            model.setCurrentSubjectId(serieId)
+            model.setCurrentFeatureId(feature)
+            model.setCurrentScoreVal(score)
+            return <></>
+          }}
+          labelTextColor={{ from: 'color', modifiers: [['darker', 1.8]] }}
+          legends={[
+            {
+              anchor: 'top-right',
+              translateX: 0,
+              translateY: -30,
+              length: 200,
+              thickness: 10,
+              direction: 'row',
+              tickPosition: 'after',
+              tickSize: 3,
+              tickSpacing: 4,
+              tickOverlap: false,
+              tickFormat: '>-.2s',
+              title: 'Score →',
+              titleAlign: 'start',
+              titleOffset: 4,
+            },
+          ]}
+        />
+      </foreignObject>
+    </svg>
   )
 }
 
