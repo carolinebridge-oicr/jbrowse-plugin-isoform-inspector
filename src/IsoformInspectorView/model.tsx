@@ -1,9 +1,11 @@
+import { ElementId } from '@jbrowse/core/util/types/mst'
 import { types, Instance, flow } from 'mobx-state-tree'
 import { fetchLocalData, getNivoHmData } from './FetchData'
 
 export default function IsoformInspectorView() {
   return types
     .model('IsoformInspectorView', {
+      id: ElementId,
       type: types.literal('IsoformInspectorView'),
       displayName: 'Transcript Isoform Inspector',
       dataState: 'noData',
@@ -55,7 +57,7 @@ export default function IsoformInspectorView() {
       setDisplayName(displayName: string) {
         self.displayName = displayName
       },
-      setGeneId: flow(function* (geneId) {
+      loadGeneData: flow(function* (geneId) {
         self.dataState = 'pending'
         try {
           const localData = yield fetchLocalData(geneId)
@@ -67,11 +69,13 @@ export default function IsoformInspectorView() {
             self.data.subjectType,
             self.data.subjects,
           )
-          self.geneId = geneId
         } catch (error) {
           self.error = error
         }
       }),
+      setGeneId(geneId: string) {
+        self.geneId = geneId
+      },
       setColors(colors: string) {
         self.colors = colors
       },

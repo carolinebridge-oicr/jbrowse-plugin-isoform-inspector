@@ -1,9 +1,8 @@
 import React from 'react'
-import { InputForm } from './inputForm'
-import Heatmap from './Heatmap'
 import { observer } from 'mobx-react-lite'
-import { Line } from '@visx/shape'
 import { measureText } from '@jbrowse/core/util'
+import { Line } from '@visx/shape'
+import Heatmap from './Heatmap'
 
 export const accentColorDark = '#005AB5' // TODO: colour of the crosshair to be freely selectable
 
@@ -98,10 +97,9 @@ const IsoformInspectorView = observer(({ model }: { model: any }) => {
   const height = 500
   const width = 1000
   // TODO: data should be retrieved every time the view is reloaded
+  model.loadGeneData(model.geneId)
   return (
     <div style={{ display: 'flex', justifyContent: 'center' }}>
-      {/* TODO: remove input form and replace with access only via the right click method on an LGV */}
-      {model.dataState !== 'done' ? <InputForm model={model} /> : null}
       <svg width={width} height={height}>
         <Heatmap model={model} height={height} width={width} />
         <Crosshair model={model} height={height} width={width} />
