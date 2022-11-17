@@ -9,6 +9,7 @@ export default function IsoformInspectorView() {
       type: types.literal('IsoformInspectorView'),
       displayName: 'Transcript Isoform Inspector',
       dataState: 'noData',
+      initialized: false,
       geneId: '',
       colors: 'greens',
       width: 800,
@@ -43,6 +44,9 @@ export default function IsoformInspectorView() {
     .actions((self) => ({
       // unused but required by your view
       setWidth() {},
+      setInitialized(bool: boolean) {
+        self.initialized = bool
+      },
       setCurrentPanel(
         currentPanel: 'subjectAnnotation' | 'heatmap' | 'feature' | undefined,
       ) {
@@ -56,6 +60,15 @@ export default function IsoformInspectorView() {
       },
       setDisplayName(displayName: string) {
         self.displayName = displayName
+      },
+      setData(data: any) {
+        self.data = data
+      },
+      setNivoData(data: any) {
+        self.nivoData = data
+      },
+      setDataState(state: string) {
+        self.dataState = state
       },
       loadGeneData: flow(function* (geneId) {
         self.dataState = 'pending'
@@ -78,6 +91,13 @@ export default function IsoformInspectorView() {
       },
       setColors(colors: string) {
         self.colors = colors
+      },
+      getAndSetNivoData() {
+        self.nivoData = getNivoHmData(
+          self.dataState,
+          self.data.subjectType,
+          self.data.subjects,
+        )
       },
     }))
 }

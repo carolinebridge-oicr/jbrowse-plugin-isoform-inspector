@@ -6,6 +6,7 @@ import {
   getSession,
 } from '@jbrowse/core/util'
 import { version } from '../package.json'
+import { fetchLocalData } from './IsoformInspectorView/FetchData'
 
 import IsoformInspectorViewF from './IsoformInspectorView'
 
@@ -38,17 +39,29 @@ export default class IsoformInspectorPlugin extends Plugin {
                     ...superContextMenuItems(),
                     {
                       label: 'Open in the Isoform Inspector',
-                      onClick: () => {
+                      onClick: async () => {
                         const session = getSession(self)
-                        session.addView('IsoformInspectorView', {})
-                        // @ts-ignore
-                        session.views[session.views.length - 1].setGeneId(
-                          feature.data.gene_id,
-                        )
-                        // @ts-ignore
-                        session.views[session.views.length - 1].loadGeneData(
-                          feature.data.gene_id,
-                        )
+                        const geneId = feature.data.gene_id
+                        try {
+                          const data = await fetchLocalData(geneId)
+                          if (data) {
+                            session.addView('IsoformInspectorView', {})
+                            const view = session.views[session.views.length - 1]
+                            // @ts-ignore
+                            view.setData(data)
+                            // @ts-ignore
+                            view.setDataState('done')
+                            // @ts-ignore
+                            view.setGeneId(geneId)
+                            // @ts-ignore
+                            view.getAndSetNivoData()
+                          }
+                        } catch (error) {
+                          session.notify(
+                            `Data for the selected gene unavailable. ${error}`,
+                            'error',
+                          )
+                        }
                       },
                     },
                   ]

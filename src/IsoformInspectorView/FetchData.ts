@@ -102,29 +102,31 @@ export function getNivoHmData(
 }
 
 export async function fetchLocalData(geneId: string) {
-  var subjectType: string = 'sample'
-  var featureType: string = 'junction_quantifications'
-  // var observationType: string = 'read_counts';
-  var subjects: Array<Subject> = []
-  var fetchAll = new Promise(async (resolve, reject) => {
-    subjectIds.reduce(async (memo, subj) => {
-      await memo
+  const subjectType: string = 'sample'
+  const featureType: string = 'junction_quantifications'
+  // const observationType: string = 'read_counts';
+  const subjects: Array<Subject> = []
+  const fetchAll = new Promise(async (resolve, reject) => {
+    subjectIds.forEach(async (subjectId) => {
       const dataPath = [
         localDataFolder,
         'observations',
         geneId,
-        subj,
+        subjectId,
         'observations',
         featureType + '.json',
       ].join('/')
 
-      return fetch(dataPath, {
+      await fetch(dataPath, {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
       })
         .then((response) => {
+          if (!response.ok) {
+            throw Error(response.statusText)
+          }
           return response.json()
         })
         .then((jsonObj) => {
@@ -133,9 +135,11 @@ export async function fetchLocalData(geneId: string) {
             resolve(1)
           }
         })
-    }, Promise.resolve())
+        .catch((error) => {
+          reject(error)
+        })
+    })
   })
-
   await fetchAll
   return { subjectType, subjects }
 }

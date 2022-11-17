@@ -37,13 +37,13 @@ const Tooltip = observer(
             />
             <text x={xPos + 10} y={yPos + 7} fontSize={10} fill="white">
               <tspan x={xPos + 7} dy="1.4em">
-                Score value: {model.currentScoreVal}
-              </tspan>
-              <tspan x={xPos + 7} dy="1.4em">
                 Feature: {model.currentFeatureId}
               </tspan>
               <tspan x={xPos + 7} dy="1.4em">
                 Subject: {model.currentSubjectId}
+              </tspan>
+              <tspan x={xPos + 7} dy="1.4em">
+                Score value: {model.currentScoreVal}
               </tspan>
             </text>
           </svg>
@@ -96,8 +96,9 @@ const IsoformInspectorView = observer(({ model }: { model: any }) => {
   // TODO: these should be dynamic to the heatmap generated
   const height = 500
   const width = 1000
-  // TODO: data should be retrieved every time the view is reloaded
-  model.loadGeneData(model.geneId)
+  if (model.geneId) {
+    model.loadGeneData(model.geneId)
+  }
   return (
     <div style={{ display: 'flex', justifyContent: 'center' }}>
       <svg width={width} height={height}>
