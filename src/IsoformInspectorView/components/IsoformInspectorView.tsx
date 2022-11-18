@@ -9,11 +9,34 @@ export const accentColorDark = '#005AB5' // TODO: colour of the crosshair to be 
 
 const Tooltip = observer(
   ({ model, width, height }: { model: any; width: number; height: number }) => {
-    const rectWidth = measureText(`Feature: ${model.currentFeatureId}`) + 14
     const rectHeight = 60
-    // setting position values
-    let xPos = model.uiState.currentX + 10
-    let yPos = model.uiState.currentY + 50 + 10
+    let xPos
+    let yPos
+
+    const tooltipLineA = `Subject: ${model.currentSubjectId}`
+    let tooltipLineB = ''
+    let tooltipLineC = ''
+    if (model.uiState.currentPanel === 'annotations') {
+      tooltipLineB = `Annotation: ${model.currentAnnotation.field}`
+      tooltipLineC = `Annotation value: ${model.currentAnnotation.value}`
+
+      xPos = model.uiState.currentX + 10
+      yPos = model.uiState.currentY + 50 + 10
+    }
+    if (model.uiState.currentPanel === 'heatmap') {
+      tooltipLineB = `Feature: ${model.currentFeatureId}`
+      tooltipLineC = `Read count: ${model.currentScoreVal}`
+
+      xPos = model.uiState.currentX + width * 0.1 + 25 + 10
+      yPos = model.uiState.currentY + 50 + 10
+    }
+
+    const rectWidth =
+      Math.max(
+        measureText(tooltipLineA),
+        measureText(tooltipLineB),
+        measureText(tooltipLineC),
+      ) + measureText('letters')
 
     if (xPos + rectWidth > width) {
       xPos = xPos - rectWidth - 20
@@ -38,13 +61,13 @@ const Tooltip = observer(
             />
             <text x={xPos + 10} y={yPos + 7} fontSize={10} fill="white">
               <tspan x={xPos + 7} dy="1.4em">
-                Feature: {model.currentFeatureId}
+                {tooltipLineA}
               </tspan>
               <tspan x={xPos + 7} dy="1.4em">
-                Subject: {model.currentSubjectId}
+                {tooltipLineB}
               </tspan>
               <tspan x={xPos + 7} dy="1.4em">
-                Reads: {model.currentScoreVal}
+                {tooltipLineC}
               </tspan>
             </text>
           </svg>
@@ -56,13 +79,21 @@ const Tooltip = observer(
 
 const Crosshair = observer(
   ({ model, width, height }: { model: any; width: number; height: number }) => {
+    const yPos = model.uiState.currentY + 50
+    let xPos
+    if (model.uiState.currentPanel === 'annotations') {
+      xPos = model.uiState.currentX
+    }
+    if (model.uiState.currentPanel === 'heatmap') {
+      xPos = model.uiState.currentX + width * 0.1 + 25
+    }
     return (
       <svg width={width} height={height}>
-        {model.uiState.currentY <= height ? (
+        {yPos <= height ? (
           <g>
             <Line
-              from={{ x: 0, y: model.uiState.currentY + 50 }}
-              to={{ x: width, y: model.uiState.currentY + 50 }}
+              from={{ x: 0, y: yPos }}
+              to={{ x: width, y: yPos }}
               stroke={accentColorDark}
               strokeWidth={2}
               pointerEvents="none"
@@ -70,15 +101,15 @@ const Crosshair = observer(
             />
           </g>
         ) : null}
-        {model.uiState.currentX <= width ? (
+        {xPos <= width + width * 0.1 + 25 ? (
           <g>
             <Line
               from={{
-                x: model.uiState.currentX,
+                x: xPos,
                 y: 0,
               }}
               to={{
-                x: model.uiState.currentX,
+                x: xPos,
                 y: height,
               }}
               stroke={accentColorDark}
@@ -97,25 +128,25 @@ const IsoformInspectorView = observer(({ model }: { model: any }) => {
   // TODO: these should be dynamic to the heatmap generated
   const height = 750
   const width = 1000
+  const gap = 25
   if (model.geneId) {
     model.loadGeneData(model.geneId)
   }
   return (
     <div style={{ display: 'flex', justifyContent: 'center' }}>
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <div style={{ flexGrow: 0.95 }} />
-        <svg width={width * 0.1} height={height - 50}>
+      <svg width={width + gap} height={height}>
+        <svg width={width * 0.1} height={height}>
           <SubjectAnnotations
             model={model}
-            height={height}
             width={width * 0.1}
+            height={height}
           />
         </svg>
-      </div>
-      <svg width={width} height={height}>
-        <Heatmap model={model} height={height} width={width} />
-        <Crosshair model={model} height={height} width={width} />
-        <Tooltip model={model} height={height} width={width} />
+        <svg width={width * 0.9} height={height} x={width * 0.1 + gap}>
+          <Heatmap model={model} width={width * 0.9} height={height} />
+        </svg>
+        <Crosshair model={model} width={width + gap} height={height} />
+        <Tooltip model={model} width={width + gap} height={height} />
       </svg>
     </div>
   )

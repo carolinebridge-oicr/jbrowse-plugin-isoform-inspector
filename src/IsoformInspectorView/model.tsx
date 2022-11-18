@@ -78,7 +78,7 @@ export default function IsoformInspectorView() {
         self.initialized = bool
       },
       setCurrentPanel(
-        currentPanel: 'subjectAnnotation' | 'heatmap' | 'feature' | undefined,
+        currentPanel: 'annotations' | 'heatmap' | 'feature' | undefined,
       ) {
         self.uiState = { ...self.uiState, currentPanel: currentPanel }
       },
@@ -106,14 +106,15 @@ export default function IsoformInspectorView() {
           const localData = yield fetchLocalData(geneId)
           self.setSubjects(localData.subjects)
           self.allNivoAnnotations = localData.nivoAnnotations
-          self.setNivoAnnotations([
-            'file_id',
-            'object_id',
-            'filename',
-            'donor_id',
-            'specimen_id',
-            'size',
-          ])
+          self.nivoAnnotations = self.allNivoAnnotations
+          // self.setNivoAnnotations([
+          //   'file_id',
+          //   'object_id',
+          //   'filename',
+          //   'donor_id',
+          //   'specimen_id',
+          //   'size',
+          // ])
           self.setSubjectIds(localData.subjectIds)
           self.data = localData
           self.dataState = 'done'

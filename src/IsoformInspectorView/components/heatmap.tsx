@@ -15,6 +15,8 @@ export const Heatmap = ({
     return null
   }
 
+  console.log(model.nivoData.data)
+
   return (
     <svg width={width} height={height}>
       <foreignObject x={0} y={0} width={width} height={height}>
@@ -33,7 +35,7 @@ export const Heatmap = ({
             type: 'sequential',
             scheme: 'oranges', // TODO: colour of the heatmap and annotations to be freely selectable
             minValue: 0,
-            maxValue: 500, // TODO: min and max should not be hardcoded
+            maxValue: 650, // TODO: min and max should not be hardcoded
           }}
           tooltip={(value) => {
             // setting tooltip values
@@ -61,7 +63,7 @@ export const Heatmap = ({
               tickSize: 3,
               tickSpacing: 4,
               tickOverlap: false,
-              tickFormat: '>-.2s',
+              tickFormat: '>-.1s',
               title: 'Read count →',
               titleAlign: 'start',
               titleOffset: 4,
