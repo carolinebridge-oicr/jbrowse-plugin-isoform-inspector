@@ -15,8 +15,6 @@ export const Heatmap = ({
     return null
   }
 
-  console.log(model.nivoData.data)
-
   return (
     <svg width={width} height={height}>
       <foreignObject x={0} y={0} width={width} height={height}>
