@@ -1,5 +1,65 @@
 const localDataFolder = 'data'
-const subjectIds = [
+// todo: hardcoded
+export const subjectIds = [
+  'SA407918',
+  'SA407986',
+  'SA408414',
+  'SA408530',
+  'SA408570',
+  'SA408706',
+  'SA408758',
+  'SA408891',
+  'SA409186',
+  'SA409258',
+  'SA409310',
+  'SA409342',
+  'SA409446',
+  'SA409498',
+  'SA409543',
+  'SA409622',
+  'SA409662',
+  'SA409711',
+  'SA409775',
+  'SA410118',
+  'SA410207',
+  'SA410234',
+  'SA410263',
+  'SA410310',
+  'SA410311',
+  'SA410350',
+  'SA410383',
+  'SA410410',
+  'SA410535',
+  'SA410582',
+  'SA410687',
+  'SA410742',
+  'SA410750',
+  'SA410758',
+  'SA410763',
+  'SA410859',
+  'SA410883',
+  'SA410899',
+  'SA410911',
+  'SA411001',
+  'SA411029',
+  'SA411189',
+  'SA411209',
+  'SA411241',
+  'SA411305',
+  'SA411397',
+  'SA411406',
+  'SA411430',
+  'SA411557',
+  'SA411578',
+  'SA411721',
+  'SA411745',
+  'SA411769',
+  'SA411797',
+  'SA411833',
+  'SA411923',
+  'SA412076',
+  'SA412212',
+  'SA412299',
   'SA507131',
   'SA507134',
   'SA507135',
@@ -77,6 +137,25 @@ const subjectIds = [
   'SA507575',
   'SA507578',
   'SA507587',
+  'SA518603',
+  'SA518614',
+  'SA518615',
+  'SA518630',
+  'SA518637',
+  'SA518665',
+  'SA518695',
+  'SA518704',
+  'SA518716',
+  'SA518750',
+  'SA518765',
+  'SA518806',
+  'SA518817',
+  'SA528675',
+  'SA528687',
+  'SA528695',
+  'SA528709',
+  'SA528761',
+  'SA528768',
 ]
 
 export interface Feature {
@@ -101,17 +180,121 @@ export function getNivoHmData(
   }
 }
 
+export async function fetchSubjectAnnotations(subjectId: string) {
+  const dataPath = [
+    localDataFolder,
+    'subjects',
+    subjectId,
+    'annotations.json',
+  ].join('/')
+
+  const response = await fetch(dataPath, {
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+  })
+
+  const myJson = await response.json()
+
+  let annotFields: string[] = []
+  let annotations: { [key: string]: string | number } = {}
+
+  for (const annot of myJson.annotations) {
+    if (!annotFields.includes(annot.type)) annotFields.push(annot.type)
+    annotations[annot.type] = annot.value
+  }
+
+  return { annotFields, annotations }
+}
+
+let nextIndex = 1
+// colour-blind friendly palette retrieved from https://www.nature.com/articles/nmeth.1618
+const colourPalette = [
+  // '#000000',
+  '#e69d00',
+  '#56b3e9',
+  '#009e74',
+  '#f0e442',
+  '#0071b2',
+  '#d55c00',
+  '#cc79a7',
+]
+let colours = {}
+
 export async function fetchLocalData(geneId: string) {
+  // TODO: hardcoded
   const subjectType: string = 'sample'
   const featureType: string = 'junction_quantifications'
   // const observationType: string = 'read_counts';
   const subjects: Array<Subject> = []
+  const nivoAnnotations: Array<{}> = []
   const fetchAll = new Promise(async (resolve, reject) => {
     subjectIds.forEach(async (subjectId) => {
+      // fetching the data for the annotations
+      const { annotFields, annotations } = await fetchSubjectAnnotations(
+        subjectId,
+      )
+      annotFields.forEach((annotField) => {
+        const index = nivoAnnotations.findIndex(
+          (element: any) => element.annotField === annotField,
+        )
+        if (index === -1) {
+          nivoAnnotations.push({
+            annotField: annotField,
+          })
+          colours = {
+            ...colours,
+            [annotField]: {
+              [annotations[annotField]]: colourPalette[0],
+            },
+          }
+          nivoAnnotations[nivoAnnotations.length - 1] = {
+            ...nivoAnnotations[nivoAnnotations.length - 1],
+            // this '5' is necessary because we aren't using the nivo bar chart exactly as intended...the 5 basically serves to pad out the data on the bar chart, and the actual substance comes from the _value property
+            // TODO: might run into issues when the heatmap resizes itself based on avail data quantity
+            // the 5 declares that each cell of the heatmap is only 5 px hight
+            [subjectId]: 5,
+            [`${subjectId}_value`]: annotations[annotField],
+            [`${subjectId}_color`]:
+              // @ts-ignore
+              colours[annotField][annotations[annotField]],
+          }
+        } else {
+          // @ts-ignore
+          const colour = colours[annotField][annotations[annotField]]
+          if (!colour) {
+            colours = {
+              ...colours,
+              [annotField]: {
+                // @ts-ignore
+                ...colours[annotField],
+                [annotations[annotField]]: colourPalette[nextIndex],
+              },
+            }
+            if (nextIndex === 7) {
+              nextIndex = 0
+            } else {
+              nextIndex++
+            }
+          }
+          nivoAnnotations[index] = {
+            ...nivoAnnotations[index],
+            [subjectId]: 5,
+            [`${subjectId}_value`]: annotations[annotField],
+            [`${subjectId}_color`]:
+              // @ts-ignore
+              colours[annotField][annotations[annotField]],
+          }
+        }
+      })
+
+      // fetching the data for the heatmap
       const dataPath = [
         localDataFolder,
         'observations',
         geneId,
+        'subjects',
         subjectId,
         'observations',
         featureType + '.json',
@@ -141,7 +324,7 @@ export async function fetchLocalData(geneId: string) {
     })
   })
   await fetchAll
-  return { subjectType, subjects }
+  return { subjectType, subjects, nivoAnnotations, subjectIds }
 }
 
 function getHeatmapData(subjectType: string, subjects: Array<Subject>) {

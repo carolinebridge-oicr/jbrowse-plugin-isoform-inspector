@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite'
 import { measureText } from '@jbrowse/core/util'
 import { Line } from '@visx/shape'
 import Heatmap from './Heatmap'
+import SubjectAnnotations from './SubjectAnnotations'
 
 export const accentColorDark = '#005AB5' // TODO: colour of the crosshair to be freely selectable
 
@@ -43,7 +44,7 @@ const Tooltip = observer(
                 Subject: {model.currentSubjectId}
               </tspan>
               <tspan x={xPos + 7} dy="1.4em">
-                Score value: {model.currentScoreVal}
+                Reads: {model.currentScoreVal}
               </tspan>
             </text>
           </svg>
@@ -94,13 +95,23 @@ const Crosshair = observer(
 
 const IsoformInspectorView = observer(({ model }: { model: any }) => {
   // TODO: these should be dynamic to the heatmap generated
-  const height = 500
+  const height = 750
   const width = 1000
   if (model.geneId) {
     model.loadGeneData(model.geneId)
   }
   return (
     <div style={{ display: 'flex', justifyContent: 'center' }}>
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flexGrow: 0.95 }} />
+        <svg width={width * 0.1} height={height - 50}>
+          <SubjectAnnotations
+            model={model}
+            height={height}
+            width={width * 0.1}
+          />
+        </svg>
+      </div>
       <svg width={width} height={height}>
         <Heatmap model={model} height={height} width={width} />
         <Crosshair model={model} height={height} width={width} />

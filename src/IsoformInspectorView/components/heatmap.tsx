@@ -27,13 +27,13 @@ export const Heatmap = ({
           axisRight={null}
           axisLeft={null}
           enableLabels={false}
-          inactiveOpacity={0.95}
+          inactiveOpacity={1}
           margin={{ top: 50, right: 2, bottom: 2, left: 2 }}
           colors={{
             type: 'sequential',
             scheme: 'oranges', // TODO: colour of the heatmap and annotations to be freely selectable
             minValue: 0,
-            maxValue: 230,
+            maxValue: 500, // TODO: min and max should not be hardcoded
           }}
           tooltip={(value) => {
             // setting tooltip values
@@ -62,7 +62,7 @@ export const Heatmap = ({
               tickSpacing: 4,
               tickOverlap: false,
               tickFormat: '>-.2s',
-              title: 'Score →',
+              title: 'Read count →',
               titleAlign: 'start',
               titleOffset: 4,
             },

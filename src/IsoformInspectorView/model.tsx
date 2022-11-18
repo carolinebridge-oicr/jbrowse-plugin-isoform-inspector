@@ -15,21 +15,29 @@ export default function IsoformInspectorView() {
       width: 800,
       height: 500,
       keys: types.array(types.string),
+      hiddenAnnotations: types.array(types.string),
     })
     .volatile(() => ({
       data: undefined as unknown as any,
       nivoData: undefined as unknown as any,
+      allNivoAnnotations: undefined as unknown as any,
+      nivoAnnotations: undefined as unknown as any,
       error: undefined as unknown as any,
       currentSubjectId: undefined as unknown as any,
       currentFeatureId: undefined as unknown as any,
       currentScoreVal: undefined as unknown as any,
+      currentAnnotation: undefined as unknown as any,
       uiState: {},
       subjects: {},
       features: {},
+      subjectIds: [],
     }))
     .actions((self) => ({
       setSubjects(subjects: any) {
         self.subjects = subjects
+      },
+      setSubjectIds(array: any) {
+        self.subjectIds = array
       },
       setCurrentSubjectId(subjectId: string | undefined) {
         self.currentSubjectId = subjectId
@@ -39,6 +47,28 @@ export default function IsoformInspectorView() {
       },
       setCurrentScoreVal(score: number | undefined) {
         self.currentScoreVal = score
+      },
+      setCurrentAnnotation(field: string, value: string) {
+        self.currentAnnotation = { field: field, value: value }
+      },
+      addHiddenAnnotation(annot: string) {
+        self.hiddenAnnotations.push(annot)
+      },
+      removeHiddenAnnotation(annot: string) {
+        self.hiddenAnnotations.remove(annot)
+      },
+      setNivoAnnotations(annotsToHide: Array<string>) {
+        let revisedAnnots: Array<{}> = []
+        self.allNivoAnnotations.forEach((annotationType: any) => {
+          if (
+            !annotsToHide.find((element: any) => {
+              return element === annotationType['annotField']
+            })
+          ) {
+            revisedAnnots = [...revisedAnnots, annotationType]
+          }
+        })
+        self.nivoAnnotations = revisedAnnots
       },
     }))
     .actions((self) => ({
@@ -75,6 +105,16 @@ export default function IsoformInspectorView() {
         try {
           const localData = yield fetchLocalData(geneId)
           self.setSubjects(localData.subjects)
+          self.allNivoAnnotations = localData.nivoAnnotations
+          self.setNivoAnnotations([
+            'file_id',
+            'object_id',
+            'filename',
+            'donor_id',
+            'specimen_id',
+            'size',
+          ])
+          self.setSubjectIds(localData.subjectIds)
           self.data = localData
           self.dataState = 'done'
           self.nivoData = getNivoHmData(
