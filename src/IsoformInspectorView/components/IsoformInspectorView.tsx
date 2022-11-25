@@ -79,14 +79,24 @@ const Tooltip = observer(
 )
 
 const Crosshair = observer(
-  ({ model, width, height }: { model: any; width: number; height: number }) => {
+  ({
+    model,
+    width,
+    height,
+    gap,
+  }: {
+    model: any
+    width: number
+    height: number
+    gap: number
+  }) => {
     const yPos = model.uiState.currentY
     let xPos
     if (model.uiState.currentPanel === 'annotations') {
       xPos = model.uiState.currentX
     }
     if (model.uiState.currentPanel === 'heatmap') {
-      xPos = model.uiState.currentX + width * 0.1 + 25
+      xPos = model.uiState.currentX + width * 0.1 + gap
     }
     return (
       <svg width={width} height={height} y={50}>
@@ -102,7 +112,7 @@ const Crosshair = observer(
             />
           </g>
         ) : null}
-        {xPos <= width + width * 0.1 + 25 ? (
+        {xPos <= width + width * 0.1 + gap ? (
           <g>
             <Line
               from={{
@@ -126,13 +136,14 @@ const Crosshair = observer(
 )
 
 const IsoformInspectorView = observer(({ model }: { model: any }) => {
-  // TODO: these should be dynamic to the heatmap generated
-  const height = 750
+  const height = 650
   const width = 1000
-  const gap = 25
+  const gap = 15
+
   if (model.geneId) {
     model.loadGeneData(model.geneId)
   }
+
   return (
     <div
       style={{
@@ -152,7 +163,12 @@ const IsoformInspectorView = observer(({ model }: { model: any }) => {
           <svg width={width * 0.9} height={height} x={width * 0.1 + gap}>
             <Heatmap model={model} width={width * 0.9} height={height} />
           </svg>
-          <Crosshair model={model} width={width + gap} height={height} />
+          <Crosshair
+            model={model}
+            width={width + gap}
+            height={height}
+            gap={gap}
+          />
           <Tooltip model={model} width={width + gap} height={height} />
         </svg>
         <div style={{ display: 'flex' }}>

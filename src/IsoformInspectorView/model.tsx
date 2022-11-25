@@ -60,14 +60,19 @@ export default function IsoformInspectorView() {
       },
       setNivoAnnotations(annotsToHide: Array<string>) {
         let revisedAnnots: Array<{}> = []
-        self.allNivoAnnotations.forEach((annotationType: any) => {
-          if (
-            !annotsToHide.find((element: any) => {
-              return element === annotationType['annotField']
-            })
-          ) {
-            revisedAnnots = [...revisedAnnots, annotationType]
-          }
+        let revisedData: Array<{}> = []
+
+        self.allNivoAnnotations.forEach((subject: any) => {
+          subject.data.forEach((annotField: any) => {
+            if (!annotsToHide.find((annot: any) => annot === annotField.x)) {
+              revisedData.push(annotField)
+            }
+          })
+          revisedAnnots = [
+            ...revisedAnnots,
+            { id: subject.id, data: revisedData },
+          ]
+          revisedData = []
         })
         self.nivoAnnotations = revisedAnnots
       },
@@ -107,15 +112,15 @@ export default function IsoformInspectorView() {
           const localData = yield fetchLocalData(geneId)
           self.setSubjects(localData.subjects)
           self.allNivoAnnotations = localData.nivoAnnotations
-          self.nivoAnnotations = self.allNivoAnnotations
-          // self.setNivoAnnotations([
-          //   'file_id',
-          //   'object_id',
-          //   'filename',
-          //   'donor_id',
-          //   'specimen_id',
-          //   'size',
-          // ])
+          // TODO: when a settings option is added, these can be toggled through that instead of hardcoded
+          self.setNivoAnnotations([
+            'file_id',
+            'object_id',
+            'filename',
+            'donor_id',
+            'specimen_id',
+            'size',
+          ])
           self.setSubjectIds(localData.subjectIds)
           self.data = localData
           self.dataState = 'done'

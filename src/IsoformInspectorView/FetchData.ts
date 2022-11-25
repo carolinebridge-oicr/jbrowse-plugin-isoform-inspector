@@ -205,8 +205,6 @@ export async function fetchSubjectAnnotations(subjectId: string) {
     annotations[annot.type] = annot.value
   }
 
-  annotFields = ['specimen_type', 'project']
-
   return { annotFields, annotations }
 }
 
@@ -284,60 +282,6 @@ export async function fetchLocalData(geneId: string) {
         id: subjectId,
         data: annotatedDataForThisId,
       })
-
-      // annotFields.forEach((annotField) => {
-      //   const index = nivoAnnotations.findIndex(
-      //     (element: any) => element.annotField === annotField,
-      //   )
-      //   if (index === -1) {
-      //     nivoAnnotations.push({
-      //       annotField: annotField,
-      //     })
-      // colours = {
-      //   ...colours,
-      //   [annotField]: {
-      //     [annotations[annotField]]: colourPalette[0],
-      //   },
-      // }
-      //     nivoAnnotations[nivoAnnotations.length - 1] = {
-      //       ...nivoAnnotations[nivoAnnotations.length - 1],
-      //       // this '5' is necessary because we aren't using the nivo bar chart exactly as intended...the 5 basically serves to pad out the data on the bar chart, and the actual substance comes from the _value property
-      //       // TODO: might run into issues when the heatmap resizes itself based on avail data quantity
-      //       // the 5 declares that each cell of the heatmap is only 5 px hight
-      //       [subjectId]: 5,
-      //       [`${subjectId}_value`]: annotations[annotField],
-      //       [`${subjectId}_color`]:
-      //         // @ts-ignore
-      //         colours[annotField][annotations[annotField]],
-      //     }
-      //   } else {
-      //     // @ts-ignore
-      //     const colour = colours[annotField][annotations[annotField]]
-      //     if (!colour) {
-      //       colours = {
-      //         ...colours,
-      //         [annotField]: {
-      //           // @ts-ignore
-      //           ...colours[annotField],
-      //           [annotations[annotField]]: colourPalette[nextIndex],
-      //         },
-      //       }
-      //       if (nextIndex === 7) {
-      //         nextIndex = 0
-      //       } else {
-      //         nextIndex++
-      //       }
-      //     }
-      //     nivoAnnotations[index] = {
-      //       ...nivoAnnotations[index],
-      //       [subjectId]: 5,
-      //       [`${subjectId}_value`]: annotations[annotField],
-      //       [`${subjectId}_color`]:
-      //         // @ts-ignore
-      //         colours[annotField][annotations[annotField]],
-      //     }
-      //   }
-      // })
 
       // fetching the data for the heatmap
       const dataPath = [
