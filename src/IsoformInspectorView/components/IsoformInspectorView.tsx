@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite'
 import { measureText } from '@jbrowse/core/util'
 import { Line } from '@visx/shape'
 import Heatmap from './Heatmap'
+import GeneModel from './GeneModel'
 import SubjectAnnotations from './SubjectAnnotations'
 
 export const accentColorDark = '#005AB5' // TODO: colour of the crosshair to be freely selectable
@@ -79,7 +80,7 @@ const Tooltip = observer(
 
 const Crosshair = observer(
   ({ model, width, height }: { model: any; width: number; height: number }) => {
-    const yPos = model.uiState.currentY + 50
+    const yPos = model.uiState.currentY
     let xPos
     if (model.uiState.currentPanel === 'annotations') {
       xPos = model.uiState.currentX
@@ -88,7 +89,7 @@ const Crosshair = observer(
       xPos = model.uiState.currentX + width * 0.1 + 25
     }
     return (
-      <svg width={width} height={height}>
+      <svg width={width} height={height} y={50}>
         {yPos <= height ? (
           <g>
             <Line
@@ -110,7 +111,7 @@ const Crosshair = observer(
               }}
               to={{
                 x: xPos,
-                y: height,
+                y: height - 50,
               }}
               stroke={accentColorDark}
               strokeWidth={2}
@@ -133,21 +134,32 @@ const IsoformInspectorView = observer(({ model }: { model: any }) => {
     model.loadGeneData(model.geneId)
   }
   return (
-    <div style={{ display: 'flex', justifyContent: 'center' }}>
-      <svg width={width + gap} height={height}>
-        <svg width={width * 0.1} height={height}>
-          <SubjectAnnotations
-            model={model}
-            width={width * 0.1}
-            height={height}
-          />
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+      }}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 25 }}>
+        <svg width={width + gap} height={height}>
+          <svg width={width * 0.1} height={height}>
+            <SubjectAnnotations
+              model={model}
+              width={width * 0.1}
+              height={height}
+            />
+          </svg>
+          <svg width={width * 0.9} height={height} x={width * 0.1 + gap}>
+            <Heatmap model={model} width={width * 0.9} height={height} />
+          </svg>
+          <Crosshair model={model} width={width + gap} height={height} />
+          <Tooltip model={model} width={width + gap} height={height} />
         </svg>
-        <svg width={width * 0.9} height={height} x={width * 0.1 + gap}>
-          <Heatmap model={model} width={width * 0.9} height={height} />
-        </svg>
-        <Crosshair model={model} width={width + gap} height={height} />
-        <Tooltip model={model} width={width + gap} height={height} />
-      </svg>
+        <div style={{ display: 'flex' }}>
+          <svg width={width * 0.1 + gap} height={500}></svg>
+          {/* <GeneModel model={model} width={width * 0.9} height={500} /> */}
+        </div>
+      </div>
     </div>
   )
 })

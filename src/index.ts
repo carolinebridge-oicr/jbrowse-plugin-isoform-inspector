@@ -41,8 +41,10 @@ export default class IsoformInspectorPlugin extends Plugin {
                       label: 'Open in the Isoform Inspector',
                       onClick: async () => {
                         const session = getSession(self)
+                        // get the geneId from the feature clicked
                         const geneId = feature.data.gene_id
                         try {
+                          // retrieving and setting data within the model
                           const data = await fetchLocalData(geneId)
                           if (data) {
                             session.addView('IsoformInspectorView', {})
@@ -55,6 +57,8 @@ export default class IsoformInspectorPlugin extends Plugin {
                             view.setGeneId(geneId)
                             // @ts-ignore
                             view.getAndSetNivoData()
+                            // @ts-ignore
+                            // view.setGeneModelData(feature.data)
                           }
                         } catch (error) {
                           session.notify(
