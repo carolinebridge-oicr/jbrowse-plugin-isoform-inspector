@@ -166,6 +166,7 @@ export interface Feature {
 export interface Subject {
   subject_id: string
   features: Feature[]
+  annotation: any
 }
 
 //@ts-ignore
@@ -237,7 +238,6 @@ export async function fetchLocalData(geneId: string) {
       )
 
       const annotatedDataForThisId: Array<{}> = []
-      let index = 0
       annotFields.forEach((annotField) => {
         // @ts-ignore
         if (!colours[annotField]) {
@@ -275,7 +275,6 @@ export async function fetchLocalData(geneId: string) {
           // @ts-ignore
           colour: colours[annotField][annotations[annotField]],
         })
-        index++
       })
 
       nivoAnnotations.push({
@@ -307,7 +306,13 @@ export async function fetchLocalData(geneId: string) {
           return response.json()
         })
         .then((jsonObj) => {
-          subjects.push(jsonObj.subjects[0])
+          subjects.push({
+            ...jsonObj.subjects[0],
+            annotation: {
+              id: subjectId,
+              data: annotatedDataForThisId,
+            },
+          })
           if (subjectIds.length === subjects.length) {
             resolve(1)
           }
@@ -347,7 +352,11 @@ function getHeatmapData(subjectType: string, subjects: Array<Subject>) {
         })
       }
     }
-    nivoData.push({ id: count_info.sample, data: nivoDataObj })
+    nivoData.push({
+      id: count_info.sample,
+      data: nivoDataObj,
+      annotation: subj.annotation,
+    })
   })
 
   return {

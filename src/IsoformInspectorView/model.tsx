@@ -20,7 +20,6 @@ export default function IsoformInspectorView() {
     .volatile(() => ({
       data: undefined as unknown as any,
       nivoData: undefined as unknown as any,
-      allNivoAnnotations: undefined as unknown as any,
       nivoAnnotations: undefined as unknown as any,
       // geneModelData: undefined as unknown as any,
       error: undefined as unknown as any,
@@ -62,8 +61,8 @@ export default function IsoformInspectorView() {
         let revisedAnnots: Array<{}> = []
         let revisedData: Array<{}> = []
 
-        self.allNivoAnnotations.forEach((subject: any) => {
-          subject.data.forEach((annotField: any) => {
+        self.nivoData.data.forEach((subject: any) => {
+          subject.annotation.data.forEach((annotField: any) => {
             if (!annotsToHide.find((annot: any) => annot === annotField.x)) {
               revisedData.push(annotField)
             }
@@ -111,7 +110,17 @@ export default function IsoformInspectorView() {
         try {
           const localData = yield fetchLocalData(geneId)
           self.setSubjects(localData.subjects)
-          self.allNivoAnnotations = localData.nivoAnnotations
+          self.setSubjectIds(localData.subjectIds)
+          self.data = localData
+          self.dataState = 'done'
+          self.nivoData = getNivoHmData(
+            self.dataState,
+            self.data.subjectType,
+            self.data.subjects,
+          )
+          self.nivoData.data.sort((a: any, b: any) => {
+            return a.id.localeCompare(b.id)
+          })
           // TODO: when a settings option is added, these can be toggled through that instead of hardcoded
           self.setNivoAnnotations([
             'file_id',
@@ -121,14 +130,6 @@ export default function IsoformInspectorView() {
             'specimen_id',
             'size',
           ])
-          self.setSubjectIds(localData.subjectIds)
-          self.data = localData
-          self.dataState = 'done'
-          self.nivoData = getNivoHmData(
-            self.dataState,
-            self.data.subjectType,
-            self.data.subjects,
-          )
         } catch (error) {
           self.error = error
         }
