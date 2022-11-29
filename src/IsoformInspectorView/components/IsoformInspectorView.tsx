@@ -135,6 +135,33 @@ const Crosshair = observer(
   },
 )
 
+const AnnotationLabels = observer(
+  ({ model, width, height }: { model: any; width: number; height: number }) => {
+    if (model.dataState !== 'done' || !model.geneId) {
+      return null
+    }
+    const sampleAnnot = model.nivoAnnotations[0].data
+    const numAnnots = sampleAnnot.length
+    return (
+      <svg width={width} height={height}>
+        {sampleAnnot.map((annot: any, i: number) => {
+          return (
+            <text
+              x={0}
+              y={-5 + i * 12}
+              fontSize={64 / numAnnots}
+              textAnchor="end"
+              transform="translate(15, 15) rotate(270)"
+            >
+              {annot.x}
+            </text>
+          )
+        })}
+      </svg>
+    )
+  },
+)
+
 const IsoformInspectorView = observer(({ model }: { model: any }) => {
   const height = 650
   const width = 1000
@@ -172,7 +199,11 @@ const IsoformInspectorView = observer(({ model }: { model: any }) => {
           <Tooltip model={model} width={width + gap} height={height} />
         </svg>
         <div style={{ display: 'flex' }}>
-          <svg width={width * 0.1 + gap} height={500}></svg>
+          <AnnotationLabels
+            model={model}
+            width={width * 0.1 + gap}
+            height={height - 150}
+          />
           {/* <GeneModel model={model} width={width * 0.9} height={500} /> */}
         </div>
       </div>
