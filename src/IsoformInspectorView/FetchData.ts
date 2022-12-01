@@ -181,6 +181,138 @@ export function getNivoHmData(
   }
 }
 
+function extractExonData(data: any) {
+  // helper functions
+  const getAllElements = (arr: any, val: any) => {
+    const elements: Array<{}> = []
+    for (let i = 0; i < arr.length; i++) {
+      if (val.start >= arr[i].start && val.end <= arr[i].end) {
+        elements.push(arr[i])
+      }
+    }
+    return elements
+  }
+
+  // Collapse the transcripts into one
+  let arrOfAllTranscriptExons: Array<{}> = []
+  data.transcripts.forEach((transcript: any) => {
+    arrOfAllTranscriptExons.push(...transcript.exons)
+  })
+  arrOfAllTranscriptExons.sort((a: any, b: any) => a.start - b.start)
+
+  arrOfAllTranscriptExons = arrOfAllTranscriptExons.filter(
+    (value: any, index: number, self: any) => {
+      const matchingElements = getAllElements(self, value)
+      const longestExon = matchingElements.sort((a: any, b: any) => {
+        return b.end - b.start - (a.end - a.start)
+      })[0]
+      return (
+        // @ts-ignore
+        value.id === longestExon.id
+      )
+    },
+  )
+
+  // with our collapsed array, create an array of introns
+  const introns: Array<{}> = []
+  // truncated intron length, the length of an intron that has been truncated
+  const truncIntronLen = 1000
+  let nextExon = arrOfAllTranscriptExons[1]
+  arrOfAllTranscriptExons.forEach((exon: any, i: number) => {
+    // @ts-ignore
+    const trueLength = nextExon.start - exon.end
+    if (trueLength > 0) {
+      const intron = {
+        start: exon.end,
+        // @ts-ignore
+        end: nextExon.start,
+        trueLength,
+        truncated: trueLength > truncIntronLen,
+        truncatedBy: trueLength - truncIntronLen,
+      }
+      introns.push(intron)
+    }
+    if (i < arrOfAllTranscriptExons.length - 2) {
+      nextExon = arrOfAllTranscriptExons[i + 2]
+    }
+  })
+
+  // we can calculate our pixelsPerBase by the number of introns truncated and the length of the gene
+  const totalTruncatedBy = introns.reduce((acc: any, intron: any) => {
+    if (intron.truncated) return acc + intron.truncatedBy
+    return 0
+  }, 0)
+  const maxPixels = 900
+  const pixelsPerBase = maxPixels / (data.end - data.start - totalTruncatedBy)
+
+  // now we can use our array of introns to advise how to draw the transcripts
+  const transcripts: Array<{}> = []
+  data.transcripts.forEach((transcript: any) => {
+    let truncatedBy = 0
+    const foundIntron = introns.find(
+      (intron: any) =>
+        transcript.start <= intron.start &&
+        transcript.end >= intron.end &&
+        intron.truncated,
+    )
+    if (foundIntron) {
+      // @ts-ignore
+      truncatedBy += foundIntron.truncatedBy
+    }
+
+    let drawnTranscriptX1 = 0
+    if (transcript.start >= data.start) {
+      drawnTranscriptX1 = Math.floor(
+        (transcript.start - data.start) * pixelsPerBase,
+      )
+    }
+
+    const drawnTranscriptLineLength = Math.floor(
+      (transcript.end - transcript.start - truncatedBy) * pixelsPerBase,
+    )
+
+    const drawnTranscriptX2 = Math.floor(
+      drawnTranscriptX1 + drawnTranscriptLineLength,
+    )
+
+    const transcriptData = {
+      ...transcript,
+      length: transcript.end - transcript.start,
+      drawnTranscriptLineLength,
+      drawnTranscriptX1,
+      drawnTranscriptX2,
+    }
+
+    transcripts.push(transcriptData)
+  })
+
+  const geneModelData = {
+    ...data,
+    transcripts,
+  }
+  return geneModelData
+}
+
+export async function fetchGeneModelData(geneId: string) {
+  const dataPath = [
+    localDataFolder,
+    'features',
+    'genes',
+    `${geneId}.json`,
+  ].join('/')
+
+  const response = await fetch(dataPath, {
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+  })
+
+  const json = await response.json()
+
+  return extractExonData(json[geneId])
+}
+
 export async function fetchSubjectAnnotations(subjectId: string) {
   const dataPath = [
     localDataFolder,
@@ -230,6 +362,8 @@ export async function fetchLocalData(geneId: string) {
   // const observationType: string = 'read_counts';
   const subjects: Array<Subject> = []
   const nivoAnnotations: Array<{}> = []
+  // fetching data for the gene model
+  const geneModelData = await fetchGeneModelData(geneId)
   const fetchAll = new Promise(async (resolve, reject) => {
     subjectIds.forEach(async (subjectId) => {
       // fetching the data for the annotations
@@ -323,7 +457,7 @@ export async function fetchLocalData(geneId: string) {
     })
   })
   await fetchAll
-  return { subjectType, subjects, nivoAnnotations, subjectIds }
+  return { subjectType, subjects, geneModelData, subjectIds }
 }
 
 function getHeatmapData(subjectType: string, subjects: Array<Subject>) {
