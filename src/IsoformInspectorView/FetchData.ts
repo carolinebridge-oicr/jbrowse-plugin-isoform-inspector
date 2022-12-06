@@ -216,7 +216,7 @@ function extractExonData(data: any) {
   // with our collapsed array, create an array of introns
   const introns: Array<{}> = []
   // truncated intron length, the length of an intron that has been truncated
-  const truncIntronLen = 1000
+  const truncIntronLen = 6000
   let nextExon = arrOfAllTranscriptExons[1]
   arrOfAllTranscriptExons.forEach((exon: any, i: number) => {
     // @ts-ignore
@@ -249,21 +249,26 @@ function extractExonData(data: any) {
   const transcripts: Array<{}> = []
   data.transcripts.forEach((transcript: any) => {
     let truncatedBy = 0
-    const foundIntron = introns.find(
-      (intron: any) =>
+    let intronStartOffset = 0
+    introns.forEach((intron: any) => {
+      if (
         transcript.start <= intron.start &&
         transcript.end >= intron.end &&
-        intron.truncated,
-    )
-    if (foundIntron) {
-      // @ts-ignore
-      truncatedBy += foundIntron.truncatedBy
-    }
+        intron.truncated
+      ) {
+        truncatedBy += intron.truncatedBy
+      }
+      if (transcript.start >= intron.end && intron.truncated) {
+        intronStartOffset += intron.truncatedBy
+      }
+    })
+
+    console.log(truncatedBy, intronStartOffset)
 
     let drawnTranscriptX1 = 0
     if (transcript.start >= data.start) {
       drawnTranscriptX1 = Math.floor(
-        (transcript.start - data.start) * pixelsPerBase,
+        (transcript.start - data.start - intronStartOffset) * pixelsPerBase,
       )
     }
 
@@ -275,12 +280,55 @@ function extractExonData(data: any) {
       drawnTranscriptX1 + drawnTranscriptLineLength,
     )
 
+    // we can use the introns similarly to advise how to draw the exons for this transcript
+    const exons: Array<{}> = []
+    let startLoc = drawnTranscriptX1
+    transcript.exons
+      .slice()
+      .reverse()
+      .forEach((exon: any, i: number) => {
+        if (exon.type === 'exon') {
+          const drawnExonRectWidth =
+            Math.floor((exon.end - exon.start) * pixelsPerBase) > 0
+              ? Math.floor((exon.end - exon.start) * pixelsPerBase)
+              : 1
+          const exonData = {
+            ...exon,
+            drawnExonRectWidth,
+            drawnExonX: startLoc,
+          }
+
+          exons.push(exonData)
+
+          const nextStart = transcript.exons.slice().reverse()[i + 1]
+            ? transcript.exons.slice().reverse()[i + 1].start
+            : 0
+          const gap = {
+            start: exon.end,
+            end: nextStart,
+            length: (nextStart - exon.end) * pixelsPerBase,
+          }
+          startLoc = Math.floor(startLoc + drawnExonRectWidth + gap.length)
+
+          introns.forEach((intron: any) => {
+            if (
+              gap.start <= intron.start &&
+              gap.end >= intron.end &&
+              intron.truncated
+            ) {
+              startLoc -= Math.floor(intron.truncatedBy * pixelsPerBase)
+            }
+          })
+        }
+      })
+
     const transcriptData = {
       ...transcript,
       length: transcript.end - transcript.start,
       drawnTranscriptLineLength,
       drawnTranscriptX1,
       drawnTranscriptX2,
+      exons,
     }
 
     transcripts.push(transcriptData)

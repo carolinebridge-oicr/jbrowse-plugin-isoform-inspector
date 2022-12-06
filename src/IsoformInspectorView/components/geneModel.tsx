@@ -31,7 +31,7 @@ export const GeneModel = ({
           },
         )}
       </g>
-      {/* <g>
+      <g>
         {model.geneModelData.transcripts.map(
           (transcript: any, index: number) => {
             return transcript.exons.map((exon: any, eIndex: number) => {
@@ -48,7 +48,7 @@ export const GeneModel = ({
             })
           },
         )}
-      </g> */}
+      </g>
     </svg>
   )
 }
