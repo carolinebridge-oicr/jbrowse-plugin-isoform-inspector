@@ -144,7 +144,7 @@ const AnnotationLabels = observer(
     const numAnnots = sampleAnnot.length
     return (
       <svg width={width} height={height}>
-        {sampleAnnot.map((annot: any, i: number) => {
+        {/* {sampleAnnot.map((annot: any, i: number) => {
           return (
             <text
               x={0}
@@ -156,7 +156,7 @@ const AnnotationLabels = observer(
               {annot.x}
             </text>
           )
-        })}
+        })} */}
       </svg>
     )
   },
@@ -204,7 +204,7 @@ const IsoformInspectorView = observer(({ model }: { model: any }) => {
             width={width * 0.1 + gap}
             height={height - 150}
           />
-          {/* <GeneModel model={model} width={width * 0.9} height={500} /> */}
+          <GeneModel model={model} width={width * 0.9} height={500} />
         </div>
       </div>
     </div>

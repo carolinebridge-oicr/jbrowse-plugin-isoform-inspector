@@ -22,6 +22,7 @@ export default function IsoformInspectorView() {
       nivoData: undefined as unknown as any,
       nivoAnnotations: undefined as unknown as any,
       geneModelData: undefined as unknown as any,
+      canonicalExons: undefined as unknown as any,
       error: undefined as unknown as any,
       currentSubjectId: undefined as unknown as any,
       currentFeatureId: undefined as unknown as any,
@@ -121,6 +122,7 @@ export default function IsoformInspectorView() {
           self.nivoData.data.sort((a: any, b: any) => {
             return a.id.localeCompare(b.id)
           })
+          self.canonicalExons = localData.canonicalExons
           self.geneModelData = localData.geneModelData
           // TODO: when a settings option is added, these can be toggled through that instead of hardcoded
           self.setNivoAnnotations([

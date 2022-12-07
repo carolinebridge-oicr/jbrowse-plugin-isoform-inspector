@@ -263,8 +263,6 @@ function extractExonData(data: any) {
       }
     })
 
-    console.log(truncatedBy, intronStartOffset)
-
     let drawnTranscriptX1 = 0
     if (transcript.start >= data.start) {
       drawnTranscriptX1 = Math.floor(
@@ -296,6 +294,18 @@ function extractExonData(data: any) {
             ...exon,
             drawnExonRectWidth,
             drawnExonX: startLoc,
+            featureId: `${exon.refName.replace(/\D/g, '')}:${exon.start}-${
+              exon.end
+            }`,
+          }
+
+          const index = arrOfAllTranscriptExons.findIndex((cExon: any) => {
+            return cExon.uniqueId === exon.uniqueId
+          })
+
+          arrOfAllTranscriptExons[index] = {
+            ...arrOfAllTranscriptExons[index],
+            ...exonData,
           }
 
           exons.push(exonData)
@@ -338,7 +348,7 @@ function extractExonData(data: any) {
     ...data,
     transcripts,
   }
-  return geneModelData
+  return { geneModelData, canonicalExons: arrOfAllTranscriptExons }
 }
 
 export async function fetchGeneModelData(geneId: string) {
@@ -411,7 +421,7 @@ export async function fetchLocalData(geneId: string) {
   const subjects: Array<Subject> = []
   const nivoAnnotations: Array<{}> = []
   // fetching data for the gene model
-  const geneModelData = await fetchGeneModelData(geneId)
+  const { geneModelData, canonicalExons } = await fetchGeneModelData(geneId)
   const fetchAll = new Promise(async (resolve, reject) => {
     subjectIds.forEach(async (subjectId) => {
       // fetching the data for the annotations
@@ -505,7 +515,7 @@ export async function fetchLocalData(geneId: string) {
     })
   })
   await fetchAll
-  return { subjectType, subjects, geneModelData, subjectIds }
+  return { subjectType, subjects, geneModelData, subjectIds, canonicalExons }
 }
 
 function getHeatmapData(subjectType: string, subjects: Array<Subject>) {

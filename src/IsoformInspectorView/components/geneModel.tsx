@@ -14,17 +14,35 @@ export const GeneModel = ({
     return null
   }
 
+  console.log(model.canonicalExons)
+
   return (
     <svg width={width} height={height}>
+      <g>
+        {model.canonicalExons.map((exon: any) => {
+          return (
+            <rect
+              key={exon.uniqueId + '_canonical'}
+              width={exon.drawnExonRectWidth}
+              height={10}
+              x={exon.drawnExonX}
+              y={30}
+              stroke={'black'}
+              fill={'white'}
+            />
+          )
+        })}
+      </g>
       <g>
         {model.geneModelData.transcripts.map(
           (transcript: any, index: number) => {
             return (
               <line
+                key={transcript.uniqueId}
                 x1={transcript.drawnTranscriptX1}
                 x2={transcript.drawnTranscriptX2}
-                y1={20 * (index + 1)}
-                y2={20 * (index + 1)}
+                y1={20 * (index + 5)}
+                y2={20 * (index + 5)}
                 stroke="black"
               />
             )
@@ -37,12 +55,21 @@ export const GeneModel = ({
             return transcript.exons.map((exon: any, eIndex: number) => {
               return (
                 <rect
+                  key={exon.uniqueId}
                   width={exon.drawnExonRectWidth}
                   height={10}
                   x={exon.drawnExonX}
-                  y={20 * (index + 1) - 5}
-                  stroke="black"
-                  fill="white"
+                  y={20 * (index + 5) - 5}
+                  stroke={
+                    model.currentFeatureId?.includes(exon.end + 1)
+                      ? 'red'
+                      : 'black'
+                  }
+                  fill={
+                    model.currentFeatureId?.includes(exon.end + 1)
+                      ? 'red'
+                      : 'white'
+                  }
                 />
               )
             })
