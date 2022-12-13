@@ -15,6 +15,12 @@ export const Heatmap = ({
     return null
   }
 
+  const maxVal = Math.max(
+    ...model.nivoData.data.map((object: any) =>
+      Math.max(...object.data.map((item: any) => item.y)),
+    ),
+  )
+
   return (
     <svg width={width} height={height}>
       <foreignObject x={0} y={0} width={width} height={height}>
@@ -33,7 +39,7 @@ export const Heatmap = ({
             type: 'sequential',
             scheme: 'oranges', // TODO: colour of the heatmap and annotations to be freely selectable
             minValue: 0,
-            maxValue: 650, // TODO: min and max should not be hardcoded
+            maxValue: maxVal, // TODO: min and max should not be hardcoded
           }}
           tooltip={(value) => {
             // setting tooltip values

@@ -81,19 +81,5 @@ export default class IsoformInspectorPlugin extends Plugin {
     )
   }
 
-  configure(pluginManager: PluginManager) {
-    // TODO: remove this, this is for development only
-    if (isAbstractMenuManager(pluginManager.rootModel)) {
-      pluginManager.rootModel.appendToMenu('Add', {
-        label: 'Isoform Inspector view',
-        onClick: (session: AbstractSessionModel) => {
-          session.addView('IsoformInspectorView', {})
-          // @ts-ignore
-          session.views[session.views.length - 1].setGeneId(
-            'ENSG00000068878.10',
-          )
-        },
-      })
-    }
-  }
+  configure(pluginManager: PluginManager) {}
 }

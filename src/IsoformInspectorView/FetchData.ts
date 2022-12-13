@@ -169,18 +169,6 @@ export interface Subject {
   annotation: any
 }
 
-//@ts-ignore
-export function getNivoHmData(
-  dataState: string,
-  subjectType: string,
-  subjects: Array<Subject>,
-) {
-  if (dataState === 'done') {
-    const { subject, features, data } = getHeatmapData(subjectType, subjects)
-    return { subject, features, data }
-  }
-}
-
 function extractExonData(data: any) {
   // helper functions
   const getAllElements = (arr: any, val: any) => {
@@ -518,12 +506,33 @@ export async function fetchLocalData(geneId: string) {
   return { subjectType, subjects, geneModelData, subjectIds, canonicalExons }
 }
 
-function getHeatmapData(subjectType: string, subjects: Array<Subject>) {
-  var keys: Array<string> = []
-  var nivoData: any[] = []
+export function getNivoHmData(
+  dataState: string,
+  showCols: boolean,
+  subjectType: string,
+  subjects: Array<Subject>,
+) {
+  if (dataState === 'done') {
+    const { subject, features, data } = getHeatmapData(
+      subjectType,
+      subjects,
+      showCols,
+    )
+    return { subject, features, data }
+  }
+  return
+}
+
+function getHeatmapData(
+  subjectType: string,
+  subjects: Array<Subject>,
+  showCols: boolean,
+) {
+  let keys: Array<string> = []
+  let nivoData: any[] = []
 
   subjects.forEach((subj, i) => {
-    var count_info: { [key: string]: any } = {}
+    let count_info: { [key: string]: any } = {}
     count_info[subjectType] = subj.subject_id
 
     subj.features.forEach((feature: any, j: number) => {
@@ -551,9 +560,28 @@ function getHeatmapData(subjectType: string, subjects: Array<Subject>) {
     })
   })
 
+  if (!showCols) {
+    nivoData = filterNoDataColumns(nivoData)
+  }
+
   return {
     subject: 'sample',
     features: keys,
     data: nivoData,
   }
+}
+
+export function filterNoDataColumns(data: any) {
+  const hasValues = data.reduce(
+    (r: any, a: any) => a.data.map((value: any, i: number) => (r[i] = value.y)),
+    [],
+  )
+  const result = data.map((a: any) => {
+    return {
+      ...a,
+      data: a.data.filter((_: any, i: number) => hasValues[i]),
+    }
+  })
+
+  return result
 }

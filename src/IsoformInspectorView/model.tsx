@@ -1,6 +1,10 @@
+import { MenuItem } from '@jbrowse/core/ui'
 import { ElementId } from '@jbrowse/core/util/types/mst'
 import { types, Instance, flow } from 'mobx-state-tree'
 import { fetchLocalData, getNivoHmData } from './FetchData'
+import VisibilityIcon from '@mui/icons-material/Visibility'
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
+import { getSession } from '@jbrowse/core/util'
 
 export default function IsoformInspectorView() {
   return types
@@ -16,6 +20,11 @@ export default function IsoformInspectorView() {
       height: 500,
       keys: types.array(types.string),
       hiddenAnnotations: types.array(types.string),
+
+      showRows: true,
+      showCols: true,
+      showCanonicalExons: true,
+      showCovPlot: true,
     })
     .volatile(() => ({
       data: undefined as unknown as any,
@@ -116,9 +125,11 @@ export default function IsoformInspectorView() {
           self.dataState = 'done'
           self.nivoData = getNivoHmData(
             self.dataState,
+            self.showCols,
             self.data.subjectType,
             self.data.subjects,
           )
+          // TODO: currently only sorted by id, eventually sorted by other traits
           self.nivoData.data.sort((a: any, b: any) => {
             return a.id.localeCompare(b.id)
           })
@@ -146,9 +157,162 @@ export default function IsoformInspectorView() {
       getAndSetNivoData() {
         self.nivoData = getNivoHmData(
           self.dataState,
+          self.showCols,
           self.data.subjectType,
           self.data.subjects,
         )
+      },
+      toggleHeatmapData(location: 'row' | 'column') {
+        const session = getSession(self)
+        if (location === 'row') {
+          self.showRows = !self.showRows
+
+          // this.getAndSetNivoData()
+
+          session.notify(
+            'Rows with no reads have been hidden on the heatmap',
+            'info',
+          )
+        }
+        if (location === 'column') {
+          self.showCols = !self.showCols
+          // hide columns with no reads
+          if (!self.showCols) {
+            this.getAndSetNivoData()
+
+            session.notify(
+              'Columns with no reads have been hidden on the heatmap',
+              'info',
+            )
+          } else {
+            this.getAndSetNivoData()
+
+            session.notify(
+              'Columns with no reads have been revealed on the heatmap',
+              'info',
+            )
+          }
+        }
+      },
+      toggleCanonicalExons() {
+        self.showCanonicalExons = !self.showCanonicalExons
+      },
+      toggleCoveragePlot() {
+        self.showCovPlot = !self.showCovPlot
+      },
+    }))
+    .views((self) => ({
+      menuItems(): MenuItem[] {
+        const menuItems: MenuItem[] = [
+          {
+            label: 'Heatmap...',
+            subMenu: [
+              {
+                label: `${self.showRows ? 'Hide' : 'Show'} rows with no reads`,
+                icon: self.showRows ? VisibilityOffIcon : VisibilityIcon,
+                onClick: () => {
+                  self.toggleHeatmapData('row')
+                  console.log(
+                    'Hides rows with no reads, changes to "show" if it is true',
+                  )
+                },
+              },
+              {
+                label: `${
+                  self.showCols ? 'Hide' : 'Show'
+                } columns with no reads`,
+                icon: self.showCols ? VisibilityOffIcon : VisibilityIcon,
+                onClick: () => {
+                  self.toggleHeatmapData('column')
+                },
+              },
+              {
+                label: 'Emphasize cell/sample',
+                onClick: () => {
+                  console.log(
+                    'Opens a separate menu where a user can type in a cell or sample to emphasize. When submitted, draws a box around that row or column',
+                  )
+                },
+              },
+            ],
+          },
+          {
+            label: 'Gene model...',
+            subMenu: [
+              {
+                label: `${
+                  self.showCanonicalExons ? 'Hide' : 'Show'
+                } canonical exons`,
+                icon: self.showCanonicalExons
+                  ? VisibilityOffIcon
+                  : VisibilityIcon,
+                onClick: () => {
+                  self.toggleCanonicalExons()
+                  console.log('Hides the canonical exon bar if hidden')
+                },
+              },
+              {
+                label: `${
+                  self.showCovPlot ? 'Hide' : 'Show'
+                } exon coverage plot`,
+                icon: self.showCovPlot ? VisibilityOffIcon : VisibilityIcon,
+                onClick: () => {
+                  self.toggleCoveragePlot()
+                  console.log(
+                    'Shows or hides the exon coverage plot below the canonical exon, this option should be disabled if canonical exons are disabled',
+                  )
+                },
+              },
+            ],
+          },
+          {
+            label: 'Toggle junction mode',
+            onClick: () => {
+              console.log(
+                'TBD the wording and placement of this, but basically just toggles between junction and exon features',
+              )
+            },
+          },
+          {
+            label: 'Sort...',
+            subMenu: [
+              {
+                label: 'by clustering',
+                onClick: () => {
+                  console.log(
+                    'without further intervention sorts by the clustering algorithm, does nothing if already sorted by this',
+                  )
+                },
+              },
+              {
+                label: 'by location',
+                onClick: () => {
+                  console.log(
+                    'without further intervention sorts by the feature location, does nothing if already sorted by this',
+                  )
+                },
+              },
+              {
+                label: 'by annotation',
+                onClick: () => {
+                  console.log(
+                    'opens a sorting menu and allows user to select an annotation to sort by e.g. all specimens in project A appear first',
+                  )
+                },
+              },
+            ],
+          },
+          {
+            label: 'Filter by annotation',
+            onClick: () => {
+              console.log(
+                'opens filtering menu and allows user to select an annotation to filter by (e.g. filter out anything that isnt in project X)',
+              )
+            },
+          },
+        ]
+
+        return menuItems
       },
     }))
 }
