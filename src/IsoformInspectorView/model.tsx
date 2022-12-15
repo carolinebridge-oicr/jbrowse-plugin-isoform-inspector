@@ -1,7 +1,7 @@
 import { MenuItem } from '@jbrowse/core/ui'
 import { ElementId } from '@jbrowse/core/util/types/mst'
 import { types, Instance, flow } from 'mobx-state-tree'
-import { fetchLocalData, getNivoHmData } from './FetchData'
+import { fetchLocalData, getNivoHmData, mapSpliceJunctions } from './FetchData'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
 import { getSession } from '@jbrowse/core/util'
@@ -32,6 +32,7 @@ export default function IsoformInspectorView() {
       nivoAnnotations: undefined as unknown as any,
       geneModelData: undefined as unknown as any,
       canonicalExons: undefined as unknown as any,
+      spliceJunctions: undefined as unknown as any,
       error: undefined as unknown as any,
       currentSubjectId: undefined as unknown as any,
       currentFeatureId: undefined as unknown as any,
@@ -135,6 +136,10 @@ export default function IsoformInspectorView() {
           })
           self.canonicalExons = localData.canonicalExons
           self.geneModelData = localData.geneModelData
+          self.spliceJunctions = mapSpliceJunctions(
+            self.nivoData.data,
+            self.geneModelData,
+          )
           // TODO: when a settings option is added, these can be toggled through that instead of hardcoded
           self.setNivoAnnotations([
             'file_id',

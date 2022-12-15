@@ -14,6 +14,7 @@ export const GeneModel = ({
   if (model.dataState !== 'done' || !model.geneId || !model.geneModelData) {
     return null
   }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <Chip
@@ -36,27 +37,62 @@ export const GeneModel = ({
             )
           })}
         </g>
-        {/* <g>
-        {model.nivoData.data.map((feature: any, index: number) => {
-          return feature.data.map((point: any, eIndex: number) => {
-            const left = point.x.split(/-|:/)[1]
-            const right = point.x.split(/-|:/)[2]
+        <g transform="translate(0, 20)">
+          {model.nivoData.data.map((feature: any, index: number) => {
+            return feature.data.map((point: any, eIndex: number) => {
+              const object = model.spliceJunctions[point.x]
+              const control = Math.min(
+                (object.drawnJunctionX2 - object.drawnJunctionX1) / -4,
+              )
 
-            // these left and right x values will need to be sorted out in fetch data
-            return (
-              <path
-                key={point.x + '_canonical'}
-                d={`M ${left} 0 C ${left} ${10}, ${right} ${10}, ${right} 0`}
-                stroke={'black'}
-                strokeWidth={2}
-                fill="transparent"
-                onClick={(e) => {}}
-                pointerEvents="stroke"
-              />
-            )
-          })
-        })}
-      </g> */}
+              return (
+                <>
+                  <path
+                    key={point.x + '_canonical'}
+                    d={`M ${object.drawnJunctionX1} ${10} C ${
+                      object.drawnJunctionX1
+                    } ${control}, ${object.drawnJunctionX2} ${control}, ${
+                      object.drawnJunctionX2
+                    } ${10}`}
+                    stroke={
+                      model.currentFeatureId === point.x ? 'red' : '#D3D3D3'
+                    }
+                    strokeWidth={1}
+                    fill="transparent"
+                    onClick={(e) => {}}
+                    pointerEvents="stroke"
+                  />
+                  <text
+                    x={
+                      object.drawnJunctionX1 +
+                      (object.drawnJunctionX2 - object.drawnJunctionX1) / 2
+                    }
+                    y={-10}
+                    style={{ stroke: 'white', strokeWidth: '0.6em' }}
+                    visibility={
+                      model.currentFeatureId === point.x ? 'visible' : 'hidden'
+                    }
+                  >
+                    {model.spliceJunctions[point.x].value}
+                  </text>
+                  <text
+                    x={
+                      object.drawnJunctionX1 +
+                      (object.drawnJunctionX2 - object.drawnJunctionX1) / 2
+                    }
+                    y={-10}
+                    style={{ stroke: 'red' }}
+                    visibility={
+                      model.currentFeatureId === point.x ? 'visible' : 'hidden'
+                    }
+                  >
+                    {model.spliceJunctions[point.x].value}
+                  </text>
+                </>
+              )
+            })
+          })}
+        </g>
         <g>
           {model.geneModelData.transcripts.map(
             (transcript: any, index: number) => {

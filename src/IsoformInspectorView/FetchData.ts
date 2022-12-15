@@ -585,3 +585,47 @@ export function filterNoDataColumns(data: any) {
 
   return result
 }
+
+export function mapSpliceJunctions(spliceJunctions: any, geneModelData: any) {
+  const exonArrays: Array<{}> = []
+  geneModelData.transcripts.forEach((transcript: any) => {
+    exonArrays.push(transcript.exons)
+  })
+  const flattenedExons = exonArrays.flat(1)
+  const mappedJunctions = {}
+
+  spliceJunctions.forEach((subject: any) => {
+    subject.data.forEach((junction: any) => {
+      const start = junction.x.split(/-|:/)[1]
+      const end = junction.x.split(/-|:/)[2]
+
+      const startPoint = flattenedExons.find((exon: any) => {
+        return `${exon.end + 1}` === `${start}`
+      })
+      const drawnJunctionX1 =
+        // @ts-ignore
+        startPoint.drawnExonX + startPoint.drawnExonRectWidth
+
+      const endPoint = flattenedExons.find((exon: any) => {
+        return `${exon.start}` === `${end}`
+      })
+      // @ts-ignore
+      const drawnJunctionX2 = endPoint.drawnExonX
+
+      // @ts-ignore
+      const prevValue = mappedJunctions[junction.x]?.value
+        ? // @ts-ignore
+          mappedJunctions[junction.x]?.value
+        : 0
+      // @ts-ignore
+      mappedJunctions[junction.x] = {
+        feature_id: junction.x,
+        value: prevValue + junction.y,
+        drawnJunctionX1,
+        drawnJunctionX2,
+      }
+    })
+  })
+
+  return mappedJunctions
+}
