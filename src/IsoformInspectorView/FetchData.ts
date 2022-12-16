@@ -230,7 +230,7 @@ function extractExonData(data: any) {
     if (intron.truncated) return acc + intron.truncatedBy
     return 0
   }, 0)
-  const maxPixels = 900
+  const maxPixels = 1200 * 0.9
   const pixelsPerBase = maxPixels / (data.end - data.start - totalTruncatedBy)
 
   // now we can use our array of introns to advise how to draw the transcripts

@@ -15,6 +15,20 @@ export const GeneModel = ({
     return null
   }
 
+  const maxValue = Math.max(
+    ...Object.entries(model.spliceJunctions).map((o: any) => {
+      return o[1].value
+    }),
+  )
+
+  const minValue = Math.min(
+    ...Object.entries(model.spliceJunctions).map((o: any) => {
+      return o[1].value
+    }),
+  )
+
+  console.log(model.spliceJunctions)
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <Chip
@@ -30,25 +44,28 @@ export const GeneModel = ({
                 width={exon.drawnExonRectWidth}
                 height={10}
                 x={exon.drawnExonX}
-                y={30}
+                y={80}
                 stroke={'black'}
                 fill={'white'}
               />
             )
           })}
         </g>
-        <g transform="translate(0, 20)">
+        <g transform="translate(0, 70)">
           {model.nivoData.data.map((feature: any, index: number) => {
             return feature.data.map((point: any, eIndex: number) => {
               const object = model.spliceJunctions[point.x]
               const control = Math.min(
                 (object.drawnJunctionX2 - object.drawnJunctionX1) / -4,
               )
+              const thickness =
+                ((model.spliceJunctions[point.x].value - minValue) * (5 - 1)) /
+                  (maxValue - minValue) +
+                1
 
               return (
-                <>
+                <g key={point.x + '_container_canonical'}>
                   <path
-                    key={point.x + '_canonical'}
                     d={`M ${object.drawnJunctionX1} ${10} C ${
                       object.drawnJunctionX1
                     } ${control}, ${object.drawnJunctionX2} ${control}, ${
@@ -57,7 +74,7 @@ export const GeneModel = ({
                     stroke={
                       model.currentFeatureId === point.x ? 'red' : '#D3D3D3'
                     }
-                    strokeWidth={1}
+                    strokeWidth={thickness}
                     fill="transparent"
                     onClick={(e) => {}}
                     pointerEvents="stroke"
@@ -88,7 +105,7 @@ export const GeneModel = ({
                   >
                     {model.spliceJunctions[point.x].value}
                   </text>
-                </>
+                </g>
               )
             })
           })}
@@ -101,8 +118,8 @@ export const GeneModel = ({
                   key={transcript.uniqueId}
                   x1={transcript.drawnTranscriptX1}
                   x2={transcript.drawnTranscriptX2}
-                  y1={20 * (index + 5)}
-                  y2={20 * (index + 5)}
+                  y1={30 * (index + 5)}
+                  y2={30 * (index + 5)}
                   stroke="black"
                 />
               )
@@ -119,7 +136,7 @@ export const GeneModel = ({
                     width={exon.drawnExonRectWidth}
                     height={10}
                     x={exon.drawnExonX}
-                    y={20 * (index + 5) - 5}
+                    y={30 * (index + 5) - 5}
                     stroke={
                       model.currentFeatureId?.includes(exon.end + 1)
                         ? 'red'
