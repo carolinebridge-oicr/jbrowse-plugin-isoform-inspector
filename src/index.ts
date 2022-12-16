@@ -10,6 +10,18 @@ import { fetchLocalData } from './IsoformInspectorView/FetchData'
 
 import IsoformInspectorViewF from './IsoformInspectorView'
 
+// colour-blind friendly palette retrieved from https://www.nature.com/articles/nmeth.1618
+const nmetPalette = [
+  // '#000000',
+  '#e69d00',
+  '#56b3e9',
+  '#009e74',
+  '#f0e442',
+  '#0071b2',
+  '#d55c00',
+  '#cc79a7',
+]
+
 export default class IsoformInspectorPlugin extends Plugin {
   name = 'IsoformInspector'
   version = version
@@ -45,20 +57,14 @@ export default class IsoformInspectorPlugin extends Plugin {
                         const geneId = feature.data.gene_id
                         try {
                           // retrieving and setting data within the model
-                          const data = await fetchLocalData(geneId)
+                          const data = await fetchLocalData(geneId, nmetPalette)
                           if (data) {
                             session.addView('IsoformInspectorView', {})
                             const view = session.views[session.views.length - 1]
                             // @ts-ignore
-                            view.setData(data)
-                            // @ts-ignore
-                            view.setDataState('done')
-                            // @ts-ignore
                             view.setGeneId(geneId)
                             // @ts-ignore
-                            view.getAndSetNivoData()
-                            // @ts-ignore
-                            // view.setGeneModelData(feature.data)
+                            view.setOnLoadProperties(data)
                           }
                         } catch (error) {
                           session.notify(

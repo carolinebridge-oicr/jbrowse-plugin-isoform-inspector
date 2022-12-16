@@ -34,12 +34,12 @@ export const Heatmap = ({
           axisLeft={null}
           enableLabels={false}
           inactiveOpacity={1}
-          margin={{ top: 50, right: 2, bottom: 2, left: 2 }}
+          margin={{ top: 65, right: 2, bottom: 2, left: 2 }}
           colors={{
             type: 'sequential',
             scheme: 'oranges', // TODO: colour of the heatmap and annotations to be freely selectable
             minValue: 0,
-            maxValue: maxVal, // TODO: min and max should not be hardcoded
+            maxValue: maxVal,
           }}
           tooltip={(value) => {
             // setting tooltip values

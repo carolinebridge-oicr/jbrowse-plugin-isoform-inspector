@@ -21,13 +21,17 @@ export const SubjectAnnotation = ({
         <ResponsiveHeatMapCanvas
           data={model.nivoAnnotations}
           axisBottom={null}
-          axisTop={null}
+          axisTop={{
+            tickSize: 5,
+            tickPadding: 5,
+            tickRotation: -45,
+          }}
           axisRight={null}
           axisLeft={null}
           enableLabels={false}
           inactiveOpacity={1}
-          xInnerPadding={0.25}
-          margin={{ top: 50, right: 2, bottom: 2, left: 2 }}
+          xInnerPadding={0.1}
+          margin={{ top: 65, right: 2, bottom: 2, left: 2 }}
           // @ts-ignore
           colors={({ data }) => data.colour}
           tooltip={(value) => {

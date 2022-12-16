@@ -6,6 +6,28 @@ import VisibilityIcon from '@mui/icons-material/Visibility'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
 import { getSession } from '@jbrowse/core/util'
 
+// colour-blind friendly palette retrieved from https://www.nature.com/articles/nmeth.1618
+const nmetPalette = [
+  // '#000000',
+  '#e69d00',
+  '#56b3e9',
+  '#009e74',
+  '#f0e442',
+  '#0071b2',
+  '#d55c00',
+  '#cc79a7',
+]
+// colour-blind friendly palette retrieved from https://personal.sron.nl/~pault/
+const paultPalette = [
+  '#4477aa',
+  '#66ccee',
+  '#228833',
+  '#ccbb44',
+  '#ee6677',
+  '#aa3377',
+  '#bbbbbb',
+]
+
 export default function IsoformInspectorView() {
   return types
     .model('IsoformInspectorView', {
@@ -20,7 +42,9 @@ export default function IsoformInspectorView() {
       height: 500,
       keys: types.array(types.string),
       hiddenAnnotations: types.array(types.string),
-
+      colourPalette: types.frozen(nmetPalette),
+      defaultPalettes: types.frozen([nmetPalette, paultPalette]),
+      colours: types.frozen(),
       showRows: true,
       showCols: true,
       showCanonicalExons: true,
@@ -68,7 +92,7 @@ export default function IsoformInspectorView() {
       removeHiddenAnnotation(annot: string) {
         self.hiddenAnnotations.remove(annot)
       },
-      setNivoAnnotations(annotsToHide: Array<string>) {
+      setNivoAnnotations(annotsToHide: Array<string>, colours: any) {
         let revisedAnnots: Array<{}> = []
         let revisedData: Array<{}> = []
 
@@ -84,7 +108,48 @@ export default function IsoformInspectorView() {
           ]
           revisedData = []
         })
+        Object.entries(colours).forEach((value) => {
+          colours[value[0]].hide = false
+          if (annotsToHide.find((annot: any) => annot === value[0]))
+            colours[value[0]].hide = true
+        })
+        self.colours = colours
         self.nivoAnnotations = revisedAnnots
+      },
+      setOnLoadProperties(data: any) {
+        this.setSubjects(data.subjects)
+        this.setSubjectIds(data.subjectIds)
+        self.data = data
+        self.dataState = 'done'
+        self.nivoData = getNivoHmData(
+          self.dataState,
+          self.showCols,
+          self.data.subjectType,
+          self.data.subjects,
+        )
+        // TODO: currently only sorted by id, eventually sorted by other traits
+        self.nivoData.data.sort((a: any, b: any) => {
+          return a.id.localeCompare(b.id)
+        })
+        self.canonicalExons = data.canonicalExons
+        self.geneModelData = data.geneModelData
+        self.spliceJunctions = mapSpliceJunctions(
+          self.nivoData.data,
+          self.geneModelData,
+        )
+        // self.colours = data.colours
+        // TODO: when a settings option is added, these can be toggled through that instead of hardcoded
+        this.setNivoAnnotations(
+          [
+            'file_id',
+            'object_id',
+            'filename',
+            'donor_id',
+            'specimen_id',
+            'size',
+          ],
+          data.colours,
+        )
       },
     }))
     .actions((self) => ({
@@ -119,36 +184,8 @@ export default function IsoformInspectorView() {
       loadGeneData: flow(function* (geneId) {
         self.dataState = 'pending'
         try {
-          const localData = yield fetchLocalData(geneId)
-          self.setSubjects(localData.subjects)
-          self.setSubjectIds(localData.subjectIds)
-          self.data = localData
-          self.dataState = 'done'
-          self.nivoData = getNivoHmData(
-            self.dataState,
-            self.showCols,
-            self.data.subjectType,
-            self.data.subjects,
-          )
-          // TODO: currently only sorted by id, eventually sorted by other traits
-          self.nivoData.data.sort((a: any, b: any) => {
-            return a.id.localeCompare(b.id)
-          })
-          self.canonicalExons = localData.canonicalExons
-          self.geneModelData = localData.geneModelData
-          self.spliceJunctions = mapSpliceJunctions(
-            self.nivoData.data,
-            self.geneModelData,
-          )
-          // TODO: when a settings option is added, these can be toggled through that instead of hardcoded
-          self.setNivoAnnotations([
-            'file_id',
-            'object_id',
-            'filename',
-            'donor_id',
-            'specimen_id',
-            'size',
-          ])
+          const localData = yield fetchLocalData(geneId, self.colourPalette)
+          self.setOnLoadProperties(localData)
         } catch (error) {
           self.error = error
         }

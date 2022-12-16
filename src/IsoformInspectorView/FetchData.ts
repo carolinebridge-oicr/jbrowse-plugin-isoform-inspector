@@ -387,21 +387,9 @@ export async function fetchSubjectAnnotations(subjectId: string) {
   return { annotFields, annotations }
 }
 
-let nextIndex = 1
-// colour-blind friendly palette retrieved from https://www.nature.com/articles/nmeth.1618
-const colourPalette = [
-  // '#000000',
-  '#e69d00',
-  '#56b3e9',
-  '#009e74',
-  '#f0e442',
-  '#0071b2',
-  '#d55c00',
-  '#cc79a7',
-]
 let colours = {}
 
-export async function fetchLocalData(geneId: string) {
+export async function fetchLocalData(geneId: string, colourPalette: any) {
   // TODO: hardcoded
   const subjectType: string = 'sample'
   const featureType: string = 'junction_quantifications'
@@ -424,25 +412,28 @@ export async function fetchLocalData(geneId: string) {
           colours = {
             ...colours,
             [annotField]: {
-              [annotations[annotField]]: colourPalette[0],
+              index: 0,
+              [annotations[annotField]]:
+                // @ts-ignore
+                colourPalette[0],
             },
           }
         }
         // @ts-ignore
         const colour = colours[annotField][annotations[annotField]]
         if (!colour) {
+          // @ts-ignore
+          const index = colours[annotField].index + 1
           colours = {
             ...colours,
             [annotField]: {
               // @ts-ignore
               ...colours[annotField],
-              [annotations[annotField]]: colourPalette[nextIndex],
+              index: index,
+              [annotations[annotField]]: colourPalette[index]
+                ? colourPalette[index]
+                : 'black',
             },
-          }
-          if (nextIndex === 7) {
-            nextIndex = 0
-          } else {
-            nextIndex++
           }
         }
         annotatedDataForThisId.push({
@@ -503,7 +494,14 @@ export async function fetchLocalData(geneId: string) {
     })
   })
   await fetchAll
-  return { subjectType, subjects, geneModelData, subjectIds, canonicalExons }
+  return {
+    subjectType,
+    subjects,
+    geneModelData,
+    subjectIds,
+    canonicalExons,
+    colours,
+  }
 }
 
 export function getNivoHmData(

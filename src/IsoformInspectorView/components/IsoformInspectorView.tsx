@@ -22,14 +22,14 @@ const Tooltip = observer(
       tooltipLineC = `Annotation value: ${model.currentAnnotation.value}`
 
       xPos = model.uiState.currentX + 10
-      yPos = model.uiState.currentY + 50 + 10
+      yPos = model.uiState.currentY + 65 + 10
     }
     if (model.uiState.currentPanel === 'heatmap') {
       tooltipLineB = `Feature: ${model.currentFeatureId}`
       tooltipLineC = `Read count: ${model.currentScoreVal}`
 
-      xPos = model.uiState.currentX + width * 0.1 + 25 + 10
-      yPos = model.uiState.currentY + 50 + 10
+      xPos = model.uiState.currentX + width * 0.1 + 20
+      yPos = model.uiState.currentY + 65 + 10
     }
 
     const rectWidth =
@@ -99,7 +99,7 @@ const Crosshair = observer(
       xPos = model.uiState.currentX + width * 0.1 + gap
     }
     return (
-      <svg width={width} height={height} y={50}>
+      <svg width={width} height={height} y={65}>
         {yPos <= height ? (
           <g>
             <Line
@@ -121,7 +121,7 @@ const Crosshair = observer(
               }}
               to={{
                 x: xPos,
-                y: height - 50,
+                y: height - 65,
               }}
               stroke={accentColorDark}
               strokeWidth={2}
@@ -144,28 +144,75 @@ const AnnotationLabels = observer(
     const numAnnots = sampleAnnot.length
     return (
       <svg width={width} height={height}>
-        {/* {sampleAnnot.map((annot: any, i: number) => {
+        {sampleAnnot.map((annot: any, i: number) => {
           return (
             <text
-              x={0}
-              y={-5 + i * 12}
-              fontSize={64 / numAnnots}
+              fontSize={12}
+              fontWeight={'bold'}
               textAnchor="end"
-              transform="translate(15, 15) rotate(270)"
+              transform={`translate(${90 + (i + 1) * 15}, ${
+                15 + i * 10
+              }) rotate(340)`}
             >
               {annot.x}
             </text>
           )
-        })} */}
+        })}
       </svg>
     )
   },
 )
 
+const AnnotationLegend = observer(({ model }: { model: any }) => {
+  if (!model.colours) return null
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        paddingLeft: 5,
+        paddingTop: 5,
+        gap: 5,
+      }}
+    >
+      {Object.entries(model.colours).map((value) => {
+        if (model.colours[value[0]].hide === false) {
+          return (
+            <div key={`${value[0]}_legend`}>
+              <div style={{ fontWeight: 'bold' }}>{value[0]}</div>
+              {Object.entries(model.colours[value[0]]).map((property) => {
+                if (property[0] !== 'index' && property[0] !== 'hide') {
+                  return (
+                    <div
+                      key={`${property[0]}_legend`}
+                      style={{ display: 'flex', alignItems: 'center', gap: 2 }}
+                    >
+                      <div
+                        style={{
+                          background: model.colours[value[0]][property[0]],
+                          width: 10,
+                          height: 10,
+                        }}
+                      />
+                      <div>{property[0]}</div>
+                    </div>
+                  )
+                }
+                return null
+              })}
+            </div>
+          )
+        }
+        return null
+      })}
+    </div>
+  )
+})
+
 const IsoformInspectorView = observer(({ model }: { model: any }) => {
-  const height = 650
-  const width = 1000
-  const gap = 15
+  const height = 850
+  const width = 1200
+  const gap = 5
 
   if (model.geneId) {
     model.loadGeneData(model.geneId)
@@ -176,9 +223,11 @@ const IsoformInspectorView = observer(({ model }: { model: any }) => {
       style={{
         display: 'flex',
         justifyContent: 'center',
+        gap: gap,
       }}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 25 }}>
+      <AnnotationLegend model={model} />
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
         <svg width={width + gap} height={height}>
           <svg width={width * 0.1} height={height}>
             <SubjectAnnotations
@@ -199,12 +248,7 @@ const IsoformInspectorView = observer(({ model }: { model: any }) => {
           <Tooltip model={model} width={width + gap} height={height} />
         </svg>
         <div style={{ display: 'flex' }}>
-          <AnnotationLabels
-            model={model}
-            width={width * 0.1 + gap}
-            height={height - 150}
-          />
-          <GeneModel model={model} width={width * 0.9} height={500} />
+          {/* <GeneModel model={model} width={width * 0.9} height={500} /> */}
         </div>
       </div>
     </div>
