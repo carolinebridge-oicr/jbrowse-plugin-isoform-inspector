@@ -27,10 +27,8 @@ export const GeneModel = ({
     }),
   )
 
-  console.log(model.spliceJunctions)
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', paddingTop: 5 }}>
       <Chip
         label={model.geneModelData?.gene_name}
         style={{ width: 'fit-content' }}
@@ -44,36 +42,46 @@ export const GeneModel = ({
                 width={exon.drawnExonRectWidth}
                 height={10}
                 x={exon.drawnExonX}
-                y={80}
+                y={90}
                 stroke={'black'}
                 fill={'white'}
               />
             )
           })}
         </g>
-        <g transform="translate(0, 70)">
-          {model.nivoData.data.map((feature: any, index: number) => {
-            return feature.data.map((point: any, eIndex: number) => {
-              const object = model.spliceJunctions[point.x]
+        <g transform="translate(0, 80)">
+          {Object.entries(model.spliceJunctions).map(
+            (feature: any, index: number) => {
+              const id = feature[0]
+              const object = feature[1]
               const control = Math.min(
                 (object.drawnJunctionX2 - object.drawnJunctionX1) / -4,
               )
               const thickness =
-                ((model.spliceJunctions[point.x].value - minValue) * (5 - 1)) /
+                ((model.spliceJunctions[id].value - minValue) * (5 - 1)) /
                   (maxValue - minValue) +
                 1
+              const t = 0.5
+              // formula: https://en.wikipedia.org/wiki/B%C3%A9zier_curve#Cubic_B%C3%A9zier_curves
+              let textYCoord =
+                (1 - t) * (1 - t) * (1 - t) * 0 +
+                3 * ((1 - t) * (1 - t)) * (t * control - 5) +
+                3 * (1 - t) * (t * t) * control -
+                5 +
+                t * t * t * 0
 
+              if (textYCoord < -75) textYCoord = -70
+
+              if (!model.showCols && object.value === 0) return null
               return (
-                <g key={point.x + '_container_canonical'}>
+                <g key={id + '_container_canonical'}>
                   <path
                     d={`M ${object.drawnJunctionX1} ${10} C ${
                       object.drawnJunctionX1
                     } ${control}, ${object.drawnJunctionX2} ${control}, ${
                       object.drawnJunctionX2
                     } ${10}`}
-                    stroke={
-                      model.currentFeatureId === point.x ? 'red' : '#D3D3D3'
-                    }
+                    stroke={model.currentFeatureId === id ? 'red' : '#D3D3D3'}
                     strokeWidth={thickness}
                     fill="transparent"
                     onClick={(e) => {}}
@@ -84,31 +92,18 @@ export const GeneModel = ({
                       object.drawnJunctionX1 +
                       (object.drawnJunctionX2 - object.drawnJunctionX1) / 2
                     }
-                    y={-10}
-                    style={{ stroke: 'white', strokeWidth: '0.6em' }}
-                    visibility={
-                      model.currentFeatureId === point.x ? 'visible' : 'hidden'
-                    }
-                  >
-                    {model.spliceJunctions[point.x].value}
-                  </text>
-                  <text
-                    x={
-                      object.drawnJunctionX1 +
-                      (object.drawnJunctionX2 - object.drawnJunctionX1) / 2
-                    }
-                    y={-10}
+                    y={textYCoord}
                     style={{ stroke: 'red' }}
                     visibility={
-                      model.currentFeatureId === point.x ? 'visible' : 'hidden'
+                      model.currentFeatureId === id ? 'visible' : 'hidden'
                     }
                   >
-                    {model.spliceJunctions[point.x].value}
+                    {object.value}
                   </text>
                 </g>
               )
-            })
-          })}
+            },
+          )}
         </g>
         <g>
           {model.geneModelData.transcripts.map(
@@ -138,12 +133,12 @@ export const GeneModel = ({
                     x={exon.drawnExonX}
                     y={30 * (index + 5) - 5}
                     stroke={
-                      model.currentFeatureId?.includes(exon.end + 1)
+                      model.currentFeatureId?.includes(exon.end)
                         ? 'red'
                         : 'black'
                     }
                     fill={
-                      model.currentFeatureId?.includes(exon.end + 1)
+                      model.currentFeatureId?.includes(exon.end)
                         ? 'red'
                         : 'white'
                     }

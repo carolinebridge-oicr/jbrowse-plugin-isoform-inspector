@@ -571,7 +571,7 @@ function getHeatmapData(
 
 export function filterNoDataColumns(data: any) {
   const hasValues = data.reduce(
-    (r: any, a: any) => a.data.map((value: any, i: number) => (r[i] = value.y)),
+    (r: any, a: any) => a.data.map((value: any, i: number) => r[i] || value.y),
     [],
   )
   const result = data.map((a: any) => {
