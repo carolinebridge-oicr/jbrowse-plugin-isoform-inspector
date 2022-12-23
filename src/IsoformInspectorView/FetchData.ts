@@ -543,13 +543,18 @@ function getHeatmapData(
 
     let nivoDataObj = []
 
+    let j = 0
     for (const [key, value] of Object.entries(count_info)) {
+      let status = 'KNOWN' // TODO: eventually this will come from the splice_junstions.json file instead
+      if (j === 45) status = 'NOVEL'
       if (key !== 'sample') {
         nivoDataObj.push({
           x: key,
           y: value,
+          status,
         })
       }
+      j++
     }
     nivoData.push({
       id: count_info.sample,
@@ -593,7 +598,7 @@ export function mapSpliceJunctions(spliceJunctions: any, geneModelData: any) {
   const mappedJunctions = {}
 
   spliceJunctions.forEach((subject: any) => {
-    subject.data.forEach((junction: any) => {
+    subject.data.forEach((junction: any, i: number) => {
       const start = junction.x.split(/-|:/)[1]
       const end = junction.x.split(/-|:/)[2]
 
@@ -617,6 +622,10 @@ export function mapSpliceJunctions(spliceJunctions: any, geneModelData: any) {
         : 0
       // @ts-ignore
       mappedJunctions[junction.x] = {
+        x: junction.x,
+        y: junction.status === 'NOVEL' ? 1 : 0,
+        label: junction.status === 'NOVEL' ? `NJ${i + 1}` : `J${i + 1}`,
+        status: `${junction.status} Junction ${i + 1}`,
         feature_id: junction.x,
         value: prevValue + junction.y,
         drawnJunctionX1,

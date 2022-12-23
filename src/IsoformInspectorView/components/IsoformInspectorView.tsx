@@ -5,6 +5,7 @@ import { Line } from '@visx/shape'
 import Heatmap from './Heatmap'
 import GeneModel from './GeneModel'
 import SubjectAnnotations from './SubjectAnnotations'
+import { HeatMapCanvas } from '@nivo/heatmap'
 
 export const accentColorDark = '#005AB5' // TODO: colour of the crosshair to be freely selectable
 
@@ -14,22 +15,35 @@ const Tooltip = observer(
     let xPos
     let yPos
 
-    const tooltipLineA = `Subject: ${model.currentSubjectId}`
+    let tooltipLineA = ''
     let tooltipLineB = ''
     let tooltipLineC = ''
+
     if (model.uiState.currentPanel === 'annotations') {
+      tooltipLineA = `Subject: ${model.currentSubjectId}`
       tooltipLineB = `Annotation: ${model.currentAnnotation.field}`
       tooltipLineC = `Annotation value: ${model.currentAnnotation.value}`
 
       xPos = model.uiState.currentX + 10
       yPos = model.uiState.currentY + 65 + 10
     }
+
     if (model.uiState.currentPanel === 'heatmap') {
+      tooltipLineA = `Subject: ${model.currentSubjectId}`
       tooltipLineB = `Feature: ${model.currentFeatureId}`
       tooltipLineC = `Read count: ${model.currentScoreVal}`
 
       xPos = model.uiState.currentX + width * 0.1 + 20
       yPos = model.uiState.currentY + 65 + 10
+    }
+
+    if (model.uiState.currentPanel === 'featureLabels') {
+      tooltipLineA = `Status label: ${model.currentSubjectId}` // KNOWN Junction 1
+      tooltipLineB = `Feature: ${model.currentFeatureId}`
+      tooltipLineC = `Total read count: ${model.currentScoreVal}` // sum of the scores for that feat
+
+      xPos = model.uiState.currentX + width * 0.1 + 20
+      yPos = model.uiState.currentY + height
     }
 
     const rectWidth =
@@ -95,7 +109,10 @@ const Crosshair = observer(
     if (model.uiState.currentPanel === 'annotations') {
       xPos = model.uiState.currentX
     }
-    if (model.uiState.currentPanel === 'heatmap') {
+    if (
+      model.uiState.currentPanel === 'heatmap' ||
+      model.uiState.currentPanel === 'featureLabels'
+    ) {
       xPos = model.uiState.currentX + width * 0.1 + gap
     }
     return (
@@ -181,6 +198,62 @@ const AnnotationLegend = observer(({ model }: { model: any }) => {
   )
 })
 
+const Labels = observer(
+  ({ model, width, height }: { model: any; width: number; height: number }) => {
+    if (!model.spliceJunctions) return null
+    let arr = Array.from(Object.values(model.spliceJunctions))
+    if (!model.showCols)
+      arr = arr.filter((obj: any) => {
+        if (obj.value > 0) return obj
+      })
+    const data = [
+      {
+        id: 'labels',
+        data: arr,
+      },
+    ]
+    return (
+      <svg width={width} height={20}>
+        <foreignObject x={0} y={0} width={width} height={20}>
+          <HeatMapCanvas
+            // @ts-ignore
+            data={data}
+            width={width}
+            height={20}
+            label={'data.label'}
+            colors={{
+              type: 'sequential',
+              scheme: 'blues',
+              minValue: 0,
+              maxValue: 5,
+            }}
+            tooltip={(value) => {
+              const { data, x, y } = value.cell
+              const feature = data.x
+              // @ts-ignore
+              const status = data.status
+              // @ts-ignore
+              const score = data.value
+              model.setCurrentPanel('featureLabels')
+              model.setCurrentSubjectId(status)
+              model.setCurrentX(x)
+              model.setCurrentY(y)
+              model.setCurrentFeatureId(feature)
+              model.setCurrentScoreVal(score)
+              return <></>
+            }}
+            onClick={(value) => {
+              console.log(
+                'queue dialog that lets a user change the label and status of this splice junction cell',
+              )
+            }}
+          />
+        </foreignObject>
+      </svg>
+    )
+  },
+)
+
 const IsoformInspectorView = observer(({ model }: { model: any }) => {
   const height = 850
   const width = 1200
@@ -221,7 +294,10 @@ const IsoformInspectorView = observer(({ model }: { model: any }) => {
         </svg>
         <div style={{ display: 'flex' }}>
           <svg width={width * 0.1 + gap} height={500} />
-          <GeneModel model={model} width={width * 0.9} height={500} />
+          <div>
+            <Labels model={model} width={width * 0.9} height={height} />
+            <GeneModel model={model} width={width * 0.9} height={500} />
+          </div>
         </div>
       </div>
     </div>

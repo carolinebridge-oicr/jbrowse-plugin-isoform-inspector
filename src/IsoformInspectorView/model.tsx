@@ -109,9 +109,15 @@ export default function IsoformInspectorView() {
           revisedData = []
         })
         Object.entries(colours).forEach((value) => {
-          colours[value[0]].hide = false
+          colours[value[0]] = {
+            ...colours[value[0]],
+            hide: false,
+          }
           if (annotsToHide.find((annot: any) => annot === value[0]))
-            colours[value[0]].hide = true
+            colours[value[0]] = {
+              ...colours[value[0]],
+              hide: true,
+            }
         })
         self.colours = colours
         self.nivoAnnotations = revisedAnnots
