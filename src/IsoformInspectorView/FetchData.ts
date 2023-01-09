@@ -174,7 +174,7 @@ function extractExonData(data: any) {
   const getAllElements = (arr: any, val: any) => {
     const elements: Array<{}> = []
     for (let i = 0; i < arr.length; i++) {
-      if (val.start >= arr[i].start && val.end <= arr[i].end) {
+      if (val.start == arr[i].start && val.end == arr[i].end) {
         elements.push(arr[i])
       }
     }
@@ -225,45 +225,21 @@ function extractExonData(data: any) {
     }
   })
 
-  // we can calculate our pixelsPerBase by the number of introns truncated and the length of the gene
-  const totalTruncatedBy = introns.reduce((acc: any, intron: any) => {
-    if (intron.truncated) return acc + intron.truncatedBy
-    return 0
-  }, 0)
   const maxPixels = 1200 * 0.9
-  const pixelsPerBase = maxPixels / (data.end - data.start - totalTruncatedBy)
+  const pixelsPerBase = maxPixels / (data.end - data.start)
 
   // now we can use our array of introns to advise how to draw the transcripts
   const transcripts: Array<{}> = []
   data.transcripts.forEach((transcript: any) => {
-    let truncatedBy = 0
-    let intronStartOffset = 0
-    introns.forEach((intron: any) => {
-      if (
-        transcript.start <= intron.start &&
-        transcript.end >= intron.end &&
-        intron.truncated
-      ) {
-        truncatedBy += intron.truncatedBy
-      }
-      if (transcript.start >= intron.end && intron.truncated) {
-        intronStartOffset += intron.truncatedBy
-      }
-    })
-
     let drawnTranscriptX1 = 0
     if (transcript.start >= data.start) {
       drawnTranscriptX1 = Math.floor(
-        (transcript.start - data.start - intronStartOffset) * pixelsPerBase,
+        (transcript.start - data.start) * pixelsPerBase,
       )
     }
 
     const drawnTranscriptLineLength = Math.floor(
-      (transcript.end - transcript.start - truncatedBy) * pixelsPerBase,
-    )
-
-    const drawnTranscriptX2 = Math.floor(
-      drawnTranscriptX1 + drawnTranscriptLineLength,
+      (transcript.end - transcript.start) * pixelsPerBase,
     )
 
     // we can use the introns similarly to advise how to draw the exons for this transcript
@@ -304,21 +280,17 @@ function extractExonData(data: any) {
           const gap = {
             start: exon.end,
             end: nextStart,
-            length: (nextStart - exon.end) * pixelsPerBase,
+            length: Math.floor((nextStart - exon.end) * pixelsPerBase),
           }
           startLoc = Math.floor(startLoc + drawnExonRectWidth + gap.length)
-
-          introns.forEach((intron: any) => {
-            if (
-              gap.start <= intron.start &&
-              gap.end >= intron.end &&
-              intron.truncated
-            ) {
-              startLoc -= Math.floor(intron.truncatedBy * pixelsPerBase)
-            }
-          })
         }
       })
+
+    const drawnTranscriptX2 =
+      // @ts-ignore
+      exons[exons.length - 1].drawnExonX +
+      // @ts-ignore
+      exons[exons.length - 1].drawnExonRectWidth
 
     const transcriptData = {
       ...transcript,
