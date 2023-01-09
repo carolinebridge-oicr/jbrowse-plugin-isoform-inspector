@@ -258,6 +258,7 @@ export default function IsoformInspectorView() {
               {
                 label: `${self.showRows ? 'Hide' : 'Show'} rows with no reads`,
                 icon: self.showRows ? VisibilityOffIcon : VisibilityIcon,
+                disabled: true,
                 onClick: () => {
                   self.toggleHeatmapData('row')
                   console.log(
@@ -276,6 +277,7 @@ export default function IsoformInspectorView() {
               },
               {
                 label: 'Emphasize cell/sample',
+                disabled: true,
                 onClick: () => {
                   console.log(
                     'Opens a separate menu where a user can type in a cell or sample to emphasize. When submitted, draws a box around that row or column',
@@ -294,6 +296,7 @@ export default function IsoformInspectorView() {
                 icon: self.showCanonicalExons
                   ? VisibilityOffIcon
                   : VisibilityIcon,
+                disabled: true,
                 onClick: () => {
                   self.toggleCanonicalExons()
                   console.log('Hides the canonical exon bar if hidden')
@@ -304,6 +307,7 @@ export default function IsoformInspectorView() {
                   self.showCovPlot ? 'Hide' : 'Show'
                 } exon coverage plot`,
                 icon: self.showCovPlot ? VisibilityOffIcon : VisibilityIcon,
+                disabled: true,
                 onClick: () => {
                   self.toggleCoveragePlot()
                   console.log(
@@ -315,6 +319,7 @@ export default function IsoformInspectorView() {
           },
           {
             label: 'Toggle junction mode',
+            disabled: true,
             onClick: () => {
               console.log(
                 'TBD the wording and placement of this, but basically just toggles between junction and exon features',
@@ -326,6 +331,7 @@ export default function IsoformInspectorView() {
             subMenu: [
               {
                 label: 'by clustering',
+                disabled: true,
                 onClick: () => {
                   console.log(
                     'without further intervention sorts by the clustering algorithm, does nothing if already sorted by this',
@@ -334,6 +340,7 @@ export default function IsoformInspectorView() {
               },
               {
                 label: 'by location',
+                disabled: true,
                 onClick: () => {
                   console.log(
                     'without further intervention sorts by the feature location, does nothing if already sorted by this',
@@ -342,6 +349,7 @@ export default function IsoformInspectorView() {
               },
               {
                 label: 'by annotation',
+                disabled: true,
                 onClick: () => {
                   console.log(
                     'opens a sorting menu and allows user to select an annotation to sort by e.g. all specimens in project A appear first',
@@ -352,6 +360,7 @@ export default function IsoformInspectorView() {
           },
           {
             label: 'Filter by annotation',
+            disabled: true,
             onClick: () => {
               console.log(
                 'opens filtering menu and allows user to select an annotation to filter by (e.g. filter out anything that isnt in project X)',

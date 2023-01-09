@@ -545,7 +545,7 @@ function getHeatmapData(
 
     let j = 0
     for (const [key, value] of Object.entries(count_info)) {
-      let status = 'KNOWN' // TODO: eventually this will come from the splice_junstions.json file instead
+      let status = 'KNOWN' // TODO: eventually this will come from the junction_quantifications.json file instead
       if (j === 45) status = 'NOVEL'
       if (key !== 'sample') {
         nivoDataObj.push({
