@@ -14,7 +14,7 @@ When a gene model of a particular gene is chosen (e.g. information is parsed fro
 
 ## User guide
 
-**Important note**: this plugin _must_ be run locally, as the files required to run it are produced by the supporting [python scripts]() and the plugin accesses these to display the relevant data.
+**Important note**: this plugin _must_ be run locally, as the files required to run it are produced by the supporting [python scripts](https://github.com/carolinebridge-oicr/jbrowse-plugin-isoform-inspector/tree/main/py-scripts) and the plugin accesses these to display the relevant data.
 
 Add to the `plugins` of your JBrowse config:
 
