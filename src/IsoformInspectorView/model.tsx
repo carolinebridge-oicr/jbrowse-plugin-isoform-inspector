@@ -95,6 +95,7 @@ export default function IsoformInspectorView() {
       setNivoAnnotations(annotsToHide: Array<string>, colours: any) {
         let revisedAnnots: Array<{}> = []
         let revisedData: Array<{}> = []
+        let revisedColours: Array<{}> = []
 
         self.nivoData.data.forEach((subject: any) => {
           subject.annotation.data.forEach((annotField: any) => {
@@ -109,17 +110,24 @@ export default function IsoformInspectorView() {
           revisedData = []
         })
         Object.entries(colours).forEach((value) => {
-          colours[value[0]] = {
-            ...colours[value[0]],
-            hide: false,
+          if (!colours.hide) {
+            // @ts-ignore
+            revisedColours[value[0]] = {
+              ...colours[value[0]],
+              hide: false,
+            }
           }
+
           if (annotsToHide.find((annot: any) => annot === value[0]))
-            colours[value[0]] = {
+            // @ts-ignore
+            revisedColours[value[0]] = {
+              // @ts-ignore
+              ...revisedColours[value[0]],
               ...colours[value[0]],
               hide: true,
             }
         })
-        self.colours = colours
+        self.colours = revisedColours
         self.nivoAnnotations = revisedAnnots
       },
       setOnLoadProperties(data: any) {
@@ -147,6 +155,17 @@ export default function IsoformInspectorView() {
         // TODO: when a settings option is added, these can be toggled through that instead of hardcoded
         this.setNivoAnnotations(
           [
+            'File ID',
+            'Object ID',
+            'File Name',
+            'ICGC Donor',
+            'Specimen ID',
+            'Repository',
+            'Study',
+            'Data Type',
+            'Experimental Strategy',
+            'Format',
+            'Size (bytes)',
             'file_id',
             'object_id',
             'filename',

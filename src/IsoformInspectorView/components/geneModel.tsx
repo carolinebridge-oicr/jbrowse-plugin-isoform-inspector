@@ -27,13 +27,18 @@ export const GeneModel = ({
     }),
   )
 
+  const canonicalHeight = 90
+
+  const realHeight =
+    canonicalHeight + 30 * (model.geneModelData?.transcripts.length + 5)
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', paddingTop: 5 }}>
       <Chip
         label={model.geneModelData?.gene_name}
         style={{ width: 'fit-content' }}
       />
-      <svg width={width} height={height}>
+      <svg width={width} height={realHeight}>
         <g>
           {model.canonicalExons.map((exon: any) => {
             return (
@@ -42,7 +47,7 @@ export const GeneModel = ({
                 width={exon.drawnExonRectWidth}
                 height={10}
                 x={exon.drawnExonX}
-                y={90}
+                y={canonicalHeight}
                 stroke={'black'}
                 fill={'white'}
               />
@@ -54,9 +59,11 @@ export const GeneModel = ({
             (feature: any, index: number) => {
               const id = feature[0]
               const object = feature[1]
-              const control = Math.min(
+              let control = Math.min(
                 (object.drawnJunctionX2 - object.drawnJunctionX1) / -4,
               )
+              if (control < -1 * canonicalHeight + 10)
+                control = -1 * canonicalHeight + 10
               const thickness =
                 ((model.spliceJunctions[id].value - minValue) * (5 - 1)) /
                   (maxValue - minValue) +
@@ -70,7 +77,8 @@ export const GeneModel = ({
                 5 +
                 t * t * t * 0
 
-              if (textYCoord < -75) textYCoord = -70
+              if (textYCoord < -1 * canonicalHeight + 15)
+                textYCoord = -1 * canonicalHeight - 15
 
               if (!model.showCols && object.value === 0) return null
               return (

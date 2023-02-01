@@ -8,19 +8,19 @@ This is due to the nature of the files being processed: RNA-Seq alignment data f
 
 ## User guide
 
-**WIP**
-
-As a user, clone the project and `cd` into the containing folder:
+Clone the project and `cd` into the containing folder:
 
 ```
 git clone jbrowse-plugin-isoform-inspector
 cd py-scripts
 ```
 
-then run the following with the relevant term replacements after moving your data into the designated data folders, **or replace the terms with your own folders where your data resides**. We recommend you create subdirectories within the `seq_files` directory for the corresponding gene, to keep things organized. Please refer to the --help command (available on this document) for details.
+then run the following with the relevant term replacements after moving your data into the designated data folders, **or replace the terms with your own folders where your data resides**. The isoform inspector is based on genes of interest, so we recommend creating subdirectories for your data that correspond with that notion. Please refer to the --help command (available on this document) for details.
+
+If deriving data from the ICGC, you can retrieve an annotations file by clicking "export this table as a TSV" when viewing your data cohort -- otherwise annotations data must include a corresponding file name and in a .tsv format.
 
 ```
-
+python3 process.py -s <location of data> -f ./input/gene-model/gencode.v19.annotation.with-introns.no-cds-utr-stop-start.gff3 -a <location of annotations tsv> -o ../public/data -g <Ensembl gene id>
 ```
 
 After running this command one file will be produced for you:
@@ -51,15 +51,9 @@ options:
 
 ## Quickstart
 
-**WIP**
+**coming soon**
 
-If you'd just like to see the project in action, the repository comes pre-equipped with some quickstart files. To use these, simply run:
-
-```
-
-```
-
-and see how the files are produced. Once the files are produced, you can get started using the plugin!
+If you'd just like to see the project in action, the repository comes pre-equipped with some quickstart files, found in public/data.
 
 ## Future work
 

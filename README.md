@@ -23,7 +23,7 @@ Add to the `plugins` of your JBrowse config:
   "plugins": [
     {
       "name": "IsoformInspector",
-      "url": "https://unpkg.com/jbrowse-plugin-isoform-inspector/dist/jbrowse-plugin-isoform-inspector.umd.production.min.js"
+      "url": "http://localhost:9000/dist/jbrowse-plugin-isoform-inspector.umd.development.js"
     }
   ]
 }
@@ -37,17 +37,17 @@ If you have a different datatype you'd like to represent in the tool, please sub
 
 ### **IMPORTANT** Pre-processing step
 
-To use the isoform inspector, you will need to perform a pre-processing step using the [isoform-inspector-py-scripts](/) to derive cohort read counts and supply one `.json` file to the plugin.
+To use the isoform inspector, you will need to perform a pre-processing step using the [python scripts](https://github.com/carolinebridge-oicr/jbrowse-plugin-isoform-inspector/tree/main/py-scripts) to derive cohort read counts and supply one `.json` file to the plugin.
 
-Follow the instructions on the README file of the linked repository to create these files. Note this process may take some time.
+Follow the instructions on the README file of the linked repository to create these files. Note this process may take some time, depending on the size of your data.
 
 Unless otherwise directed, your files should be in the appropriate folder for the isoform inspector plugin to access.
 
 ## Quickstart
 
-If you'd just like to see the project in action, the repository comes pre-equipped with some quickstart files. You can [follow the steps outlined in the scripts project](/) to produce these files, or just use the existing ones in the `data` directory that will be pulled with the plugin project.
+If you'd just like to see the project in action, the repository comes pre-equipped with some quickstart files.
 
-1. After understanding that, load the plugin into your JBrowse steps and ensure you have Gencode v19 in your JBrowse config (or use the config from the project itself).
+1. Load the plugin into your JBrowse steps and ensure you have Gencode v19 (for this demo data) in your JBrowse config (or use the config from the project itself).
 
 2. Navigate on a linear genome view to the gene `PSME4` using the search function (or navigate to location `2:54,091,141..54,197,223`).
 

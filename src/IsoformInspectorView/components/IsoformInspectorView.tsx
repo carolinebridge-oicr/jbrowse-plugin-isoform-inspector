@@ -266,6 +266,7 @@ const IsoformInspectorView = observer(({ model }: { model: any }) => {
   return (
     <div
       style={{
+        padding: '5px',
         display: 'flex',
         justifyContent: 'center',
         gap: gap,
