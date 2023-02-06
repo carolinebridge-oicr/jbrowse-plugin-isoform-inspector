@@ -88,46 +88,53 @@ function extractExonData(data: any) {
     const exons: Array<{}> = []
     let startLoc = drawnTranscriptX1
 
-    transcript.exons
-      .slice()
-      .reverse()
-      .forEach((exon: any, i: number) => {
-        if (exon.type === 'exon') {
-          const drawnExonRectWidth =
-            Math.floor((exon.end - exon.start) * pixelsPerBase) > 0
-              ? Math.floor((exon.end - exon.start) * pixelsPerBase)
-              : 1
-          const exonData = {
-            ...exon,
-            drawnExonRectWidth,
-            drawnExonX: startLoc,
-            featureId: `${exon.refName.replace(/\D/g, '')}:${exon.start}-${
-              exon.end
-            }`,
-          }
+    const transcriptExons =
+      transcript.strand === -1
+        ? transcript.exons.slice().reverse()
+        : transcript.exons
 
-          const index = arrOfAllTranscriptExons.findIndex((cExon: any) => {
-            return cExon.uniqueId === exon.uniqueId
-          })
-
-          arrOfAllTranscriptExons[index] = {
-            ...arrOfAllTranscriptExons[index],
-            ...exonData,
-          }
-
-          exons.push(exonData)
-
-          const nextStart = transcript.exons.slice().reverse()[i + 1]
-            ? transcript.exons.slice().reverse()[i + 1].start
-            : 0
-          const gap = {
-            start: exon.end,
-            end: nextStart,
-            length: Math.floor((nextStart - exon.end) * pixelsPerBase),
-          }
-          startLoc = Math.floor(startLoc + drawnExonRectWidth + gap.length)
+    transcriptExons.forEach((exon: any, i: number) => {
+      if (exon.type === 'exon') {
+        const drawnExonRectWidth =
+          Math.floor((exon.end - exon.start) * pixelsPerBase) > 0
+            ? Math.floor((exon.end - exon.start) * pixelsPerBase)
+            : 1
+        const exonData = {
+          ...exon,
+          drawnExonRectWidth,
+          drawnExonX: startLoc,
+          featureId: `${exon.refName.replace(/\D/g, '')}:${exon.start}-${
+            exon.end
+          }`,
         }
-      })
+
+        const index = arrOfAllTranscriptExons.findIndex((cExon: any) => {
+          return cExon.uniqueId === exon.uniqueId
+        })
+
+        arrOfAllTranscriptExons[index] = {
+          ...arrOfAllTranscriptExons[index],
+          ...exonData,
+        }
+
+        exons.push(exonData)
+
+        i += 1
+        while (transcriptExons[i]?.type !== 'exon') {
+          i += 1
+          if (!transcriptExons[i]) break
+        }
+
+        const nextStart = transcriptExons[i] ? transcriptExons[i].start : 0
+        const gap = {
+          start: exon.end,
+          end: nextStart,
+          length: Math.floor((nextStart - exon.end) * pixelsPerBase),
+        }
+
+        startLoc = Math.floor(startLoc + drawnExonRectWidth + gap.length)
+      }
+    })
 
     const drawnTranscriptX2 =
       // @ts-ignore
@@ -155,7 +162,7 @@ function extractExonData(data: any) {
 }
 
 export async function fetchGeneModelData(geneId: string) {
-  const dataPath = [localDataFolder, 'genes', `${geneId}.json`].join('/')
+  const dataPath = [localDataFolder, `${geneId}.json`].join('/')
 
   const response = await fetch(dataPath, {
     headers: {
