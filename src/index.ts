@@ -57,12 +57,18 @@ export default class IsoformInspectorPlugin extends Plugin {
                         const geneId = feature.data.gene_id
                         try {
                           // retrieving and setting data within the model
-                          const data = await fetchLocalData(geneId, nmetPalette)
+                          const data = await fetchLocalData(
+                            feature.data,
+                            geneId,
+                            nmetPalette,
+                          )
                           if (data) {
                             session.addView('IsoformInspectorView', {})
                             const view = session.views[session.views.length - 1]
                             // @ts-ignore
                             view.setGeneId(geneId)
+                            // @ts-ignore
+                            view.setGeneModel(feature.data)
                             // @ts-ignore
                             view.setOnLoadProperties(data)
                           }

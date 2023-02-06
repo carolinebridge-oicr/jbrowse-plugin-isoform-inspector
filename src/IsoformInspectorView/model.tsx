@@ -44,6 +44,7 @@ export default function IsoformInspectorView() {
       hiddenAnnotations: types.array(types.string),
       colourPalette: types.frozen(nmetPalette),
       defaultPalettes: types.frozen([nmetPalette, paultPalette]),
+      geneModel: types.frozen(),
       colours: types.frozen(),
       showRows: true,
       showCols: true,
@@ -85,6 +86,9 @@ export default function IsoformInspectorView() {
       },
       setCurrentAnnotation(field: string, value: string) {
         self.currentAnnotation = { field: field, value: value }
+      },
+      setGeneModel(model: any) {
+        self.geneModel = model
       },
       addHiddenAnnotation(annot: string) {
         self.hiddenAnnotations.push(annot)
@@ -209,7 +213,11 @@ export default function IsoformInspectorView() {
       loadGeneData: flow(function* (geneId) {
         self.dataState = 'pending'
         try {
-          const localData = yield fetchLocalData(geneId, self.colourPalette)
+          const localData = yield fetchLocalData(
+            self.geneModel,
+            geneId,
+            self.colourPalette,
+          )
           self.setOnLoadProperties(localData)
         } catch (error) {
           self.error = error

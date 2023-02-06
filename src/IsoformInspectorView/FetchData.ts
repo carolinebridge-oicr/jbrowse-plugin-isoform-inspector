@@ -25,8 +25,8 @@ function extractExonData(data: any) {
 
   // Collapse the transcripts into one
   let arrOfAllTranscriptExons: Array<{}> = []
-  data.transcripts.forEach((transcript: any) => {
-    arrOfAllTranscriptExons.push(...transcript.exons)
+  data.subfeatures.forEach((transcript: any) => {
+    arrOfAllTranscriptExons.push(...transcript.subfeatures)
   })
   arrOfAllTranscriptExons.sort((a: any, b: any) => a.start - b.start)
 
@@ -72,7 +72,7 @@ function extractExonData(data: any) {
 
   // now we can use our array of introns to advise how to draw the transcripts
   const transcripts: Array<{}> = []
-  data.transcripts.forEach((transcript: any) => {
+  data.subfeatures.forEach((transcript: any) => {
     let drawnTranscriptX1 = 0
     if (transcript.start >= data.start) {
       drawnTranscriptX1 = Math.floor(
@@ -90,8 +90,8 @@ function extractExonData(data: any) {
 
     const transcriptExons =
       transcript.strand === -1
-        ? transcript.exons.slice().reverse()
-        : transcript.exons
+        ? transcript.subfeatures.slice().reverse()
+        : transcript.subfeatures
 
     transcriptExons.forEach((exon: any, i: number) => {
       if (exon.type === 'exon') {
@@ -161,21 +161,6 @@ function extractExonData(data: any) {
   return { geneModelData, canonicalExons: arrOfAllTranscriptExons }
 }
 
-export async function fetchGeneModelData(geneId: string) {
-  const dataPath = [localDataFolder, `${geneId}.json`].join('/')
-
-  const response = await fetch(dataPath, {
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-  })
-
-  const json = await response.json()
-
-  return extractExonData(json[geneId])
-}
-
 let colours = {}
 
 function getAnnotFieldsFromSubject(annotations: any) {
@@ -186,7 +171,11 @@ function getAnnotFieldsFromSubject(annotations: any) {
   return { annotFields: annotFields }
 }
 
-export async function fetchLocalData(geneId: string, colourPalette: any) {
+export async function fetchLocalData(
+  geneModel: any,
+  geneId: string,
+  colourPalette: any,
+) {
   // Open the processed file
   const dataPath = `${localDataFolder}/${geneId}_subj_observ.json`
 
@@ -201,7 +190,7 @@ export async function fetchLocalData(geneId: string, colourPalette: any) {
   const subjectType = completeJson['subject_type']
   const nivoAnnotations: Array<{}> = []
   // fetching data for the gene model
-  const { geneModelData, canonicalExons } = await fetchGeneModelData(geneId)
+  const { geneModelData, canonicalExons } = extractExonData(geneModel)
 
   const { annotFields } = getAnnotFieldsFromSubject(
     completeJson.subjects[0].annotations,
