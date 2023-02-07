@@ -113,21 +113,21 @@ export default function IsoformInspectorView() {
           ]
           revisedData = []
         })
-        Object.entries(colours).forEach((value) => {
+        Object.entries(colours).forEach(([key, value]) => {
           if (!colours.hide) {
             // @ts-ignore
-            revisedColours[value[0]] = {
-              ...colours[value[0]],
+            revisedColours[key] = {
+              ...colours[key],
               hide: false,
             }
           }
 
-          if (annotsToHide.find((annot: any) => annot === value[0]))
+          if (annotsToHide.find((annot: any) => annot === key))
             // @ts-ignore
-            revisedColours[value[0]] = {
+            revisedColours[key] = {
               // @ts-ignore
-              ...revisedColours[value[0]],
-              ...colours[value[0]],
+              ...revisedColours[key],
+              ...colours[key],
               hide: true,
             }
         })

@@ -16,14 +16,16 @@ export const GeneModel = ({
   }
 
   const maxValue = Math.max(
-    ...Object.entries(model.spliceJunctions).map((o: any) => {
-      return o[1].value
+    ...Object.entries(model.spliceJunctions).map(([key, value]) => {
+      // @ts-ignore
+      return value.value
     }),
   )
 
   const minValue = Math.min(
-    ...Object.entries(model.spliceJunctions).map((o: any) => {
-      return o[1].value
+    ...Object.entries(model.spliceJunctions).map(([key, value]) => {
+      // @ts-ignore
+      return value.value
     }),
   )
 
@@ -56,9 +58,9 @@ export const GeneModel = ({
         </g>
         <g transform="translate(0, 80)">
           {Object.entries(model.spliceJunctions).map(
-            (feature: any, index: number) => {
-              const id = feature[0]
-              const object = feature[1]
+            ([key, value], index: number) => {
+              const id = key
+              const object = value as any
               let control = Math.min(
                 (object.drawnJunctionX2 - object.drawnJunctionX1) / -4,
               )

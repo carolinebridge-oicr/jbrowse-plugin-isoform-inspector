@@ -73,8 +73,9 @@ def parse_gff3(gff, gene_id):
     chr = f.seqid.replace('chr', '')
     start = f.start
     end = f.end
+    [status] = f.attributes['transcript_status'] # might be fragile
     gene['junctions'][f"{chr}:{start}-{end}"] = {
-      "is_novel": False,
+      "status": status,
       "chr": chr,
       "start": start,
       "end": end
@@ -148,7 +149,8 @@ def extract_read_counts(f, annotations, gene):
       end = gene['junctions'][junction]['end']
       junction_quant.append({
           "feature_id": junction,
-          "value": get_junction_count(samfile, chr, start, end) # this count is all it derives from ea file
+          "value": get_junction_count(samfile, chr, start, end), # this count is all it derives from ea file
+          "status": gene['junctions'][junction]['status']
           # this whole for loop basically:
           # for each junction in the junctions derived from the gencode
           # grab all that info, then create an object with the featureid and the value that coordinates with it

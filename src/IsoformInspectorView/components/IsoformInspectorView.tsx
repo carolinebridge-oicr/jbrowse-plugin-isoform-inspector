@@ -38,9 +38,9 @@ const Tooltip = observer(
     }
 
     if (model.uiState.currentPanel === 'featureLabels') {
-      tooltipLineA = `Status label: ${model.currentSubjectId}` // KNOWN Junction 1
+      tooltipLineA = `Label: ${model.currentSubjectId}` // e.g. KNOWN Junction 1
       tooltipLineB = `Feature: ${model.currentFeatureId}`
-      tooltipLineC = `Total read count: ${model.currentScoreVal}` // sum of the scores for that feat
+      tooltipLineC = `Total read count: ${model.currentScoreVal}` // sum of the scores for that feature
 
       xPos = model.uiState.currentX + width * 0.1 + 20
       yPos = model.uiState.currentY + height
@@ -164,26 +164,26 @@ const AnnotationLegend = observer(({ model }: { model: any }) => {
         gap: 5,
       }}
     >
-      {Object.entries(model.colours).map((value) => {
-        if (model.colours[value[0]].hide === false) {
+      {Object.entries(model.colours).map(([key, value]) => {
+        if (model.colours[key].hide === false) {
           return (
-            <div key={`${value[0]}_legend`}>
-              <div style={{ fontWeight: 'bold' }}>{value[0]}</div>
-              {Object.entries(model.colours[value[0]]).map((property) => {
-                if (property[0] !== 'index' && property[0] !== 'hide') {
+            <div key={`${key}_legend`}>
+              <div style={{ fontWeight: 'bold' }}>{key}</div>
+              {Object.entries(model.colours[key]).map(([pKey, pValue]) => {
+                if (pKey !== 'index' && pKey !== 'hide') {
                   return (
                     <div
-                      key={`${property[0]}_legend`}
+                      key={`${pKey}_legend`}
                       style={{ display: 'flex', alignItems: 'center', gap: 2 }}
                     >
                       <div
                         style={{
-                          background: model.colours[value[0]][property[0]],
+                          background: model.colours[key][pKey],
                           width: 10,
                           height: 10,
                         }}
                       />
-                      <div>{property[0]}</div>
+                      <div>{pKey}</div>
                     </div>
                   )
                 }

@@ -3,6 +3,7 @@ const localDataFolder = 'data'
 export interface Feature {
   feature_id: string
   value: number
+  status: string
 }
 
 export interface Subject {
@@ -300,34 +301,16 @@ function getHeatmapData(
   let nivoData: any[] = []
 
   subjects.forEach((subj, i) => {
-    let count_info: { [key: string]: any } = {}
-    count_info[subjectType] = subj.subject_id
-
-    subj.features.forEach((feature: any, j: number) => {
-      if (!keys.includes(feature.feature_id)) {
-        keys.push(feature.feature_id)
-      }
-
-      count_info[feature.feature_id] = feature.value
+    const nivoDataObj: Array<any> = []
+    subj.features.forEach((feature) => {
+      nivoDataObj.push({
+        x: feature.feature_id,
+        y: feature.value,
+        status: feature.status ? feature.status : '',
+      })
     })
-
-    let nivoDataObj = []
-
-    let j = 0
-    for (const [key, value] of Object.entries(count_info)) {
-      let status = 'KNOWN' // TODO: eventually this will come from the junction_quantifications.json file instead
-      if (j === 45) status = 'NOVEL'
-      if (key !== 'sample') {
-        nivoDataObj.push({
-          x: key,
-          y: value,
-          status,
-        })
-      }
-      j++
-    }
     nivoData.push({
-      id: count_info.sample,
+      id: subj.subject_id,
       data: nivoDataObj,
       annotation: subj.annotation,
     })
@@ -390,11 +373,16 @@ export function mapSpliceJunctions(spliceJunctions: any, geneModelData: any) {
         ? // @ts-ignore
           mappedJunctions[junction.x]?.value
         : 0
+      // we use a heatmap component to simulate labels below the actual heatmap
+      // this helps colour them based on the processed status of the junction
+      // the greater number being a more intense colour
+      const statusVal =
+        junction.status === 'NOVEL' ? 2 : junction.status === 'PUTATIVE' ? 1 : 0
       // @ts-ignore
       mappedJunctions[junction.x] = {
         x: junction.x,
-        y: junction.status === 'NOVEL' ? 1 : 0,
-        label: junction.status === 'NOVEL' ? `NJ${i + 1}` : `J${i + 1}`,
+        y: statusVal,
+        label: `J${i + 1}`,
         status: `${junction.status} Junction ${i + 1}`,
         feature_id: junction.x,
         value: prevValue + junction.y,
