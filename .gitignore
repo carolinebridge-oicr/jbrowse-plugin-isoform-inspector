@@ -124,3 +124,6 @@ cypress/screenshots
 
 # Ignore code editor
 .vscode
+
+# mac
+.DS_Store
