@@ -153,7 +153,8 @@ const Crosshair = observer(
 )
 
 const AnnotationLegend = observer(({ model }: { model: any }) => {
-  if (!model.colours) return null
+  if (!model.annotationsConfig) return null
+  console.log(model.annotationsConfig)
   return (
     <div
       style={{
@@ -164,12 +165,12 @@ const AnnotationLegend = observer(({ model }: { model: any }) => {
         gap: 5,
       }}
     >
-      {Object.entries(model.colours).map(([key, value]) => {
-        if (model.colours[key].show === true) {
+      {Object.keys(model.annotationsConfig).map((key) => {
+        if (model.annotationsConfig[key].show === true) {
           return (
             <div key={`${key}_legend`}>
               <div style={{ fontWeight: 'bold' }}>{key}</div>
-              {Object.entries(model.colours[key].fields).map(
+              {Object.entries(model.annotationsConfig[key].fields).map(
                 ([pKey, pValue]) => {
                   if (pKey !== 'id') {
                     return (

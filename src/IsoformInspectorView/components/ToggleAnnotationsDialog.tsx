@@ -67,8 +67,9 @@ export default observer(function ToggleAnnotationsDialog({
             checked={state}
             onChange={(event) => {
               setState(event.target.checked)
-              model.setNivoAnnotation(param.id, event.target.checked)
-              // model.setNivoAnnotations(model.colours)
+              model.setNivoAnnotations([
+                { field: param.id, show: event.target.checked },
+              ])
             }}
           />
         )
@@ -102,7 +103,6 @@ export default observer(function ToggleAnnotationsDialog({
       // },
     },
   ]
-
   return (
     <Dialog open onClose={() => handleClose()} maxWidth="sm">
       <DialogTitle>
@@ -119,7 +119,7 @@ export default observer(function ToggleAnnotationsDialog({
           <div className={classes.paper}>
             <Box sx={{ height: 400, width: 460 }}>
               <DataGrid
-                rows={Object.values(model.colours) as []}
+                rows={Object.values(model.annotationsConfig) as []}
                 columns={columns}
                 pageSize={5}
                 rowsPerPageOptions={[5]}

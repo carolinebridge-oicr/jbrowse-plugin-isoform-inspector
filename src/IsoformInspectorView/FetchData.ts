@@ -12,6 +12,13 @@ export interface Subject {
   annotation: any
 }
 
+export interface AnnotationConfig {
+  fields: [{}]
+  show: boolean
+  id: string
+  palette: String[]
+}
+
 function extractExonData(data: any) {
   // helper functions
   const getAllElements = (arr: any, val: any) => {
@@ -162,8 +169,6 @@ function extractExonData(data: any) {
   return { geneModelData, canonicalExons: arrOfAllTranscriptExons }
 }
 
-let colours = {}
-
 function getAnnotFieldsFromSubject(annotations: any) {
   const annotFields: Array<any> = []
   annotations.forEach((annotation: any) => {
@@ -177,6 +182,7 @@ export async function fetchLocalData(
   geneId: string,
   colourPalette: any,
 ) {
+  let annotationsConfig = {} // a dictionary of annotations where the key is the annotation name
   // Open the processed file
   const dataPath = `${localDataFolder}/${geneId}_subj_observ.json`
 
@@ -208,29 +214,39 @@ export async function fetchLocalData(
         return annotation.type === annotField
       })
       // @ts-ignore
-      if (!colours[annotField]) {
-        colours = {
-          ...colours,
+      if (!annotationsConfig[annotField]) {
+        annotationsConfig = {
+          ...annotationsConfig,
           [annotField]: {
-            id: 0,
-            [target.value]:
-              // @ts-ignore
-              colourPalette[0],
+            id: annotField,
+            show: true,
+            palette: { name: 'nmetPalette', value: colourPalette },
+            fields: {
+              [target.value]:
+                // @ts-ignore
+                colourPalette[0],
+            },
           },
         }
       }
       // @ts-ignore
-      const colour = colours[annotField][target.value]
+      const colour = annotationsConfig[annotField].fields[target.value]
       if (!colour) {
         // @ts-ignore
-        const id = colours[annotField].id + 1
-        colours = {
-          ...colours,
+        const i = Object.keys(annotationsConfig[annotField].fields).length
+        const show = i > colourPalette.length ? false : true
+        annotationsConfig = {
+          ...annotationsConfig,
           [annotField]: {
             // @ts-ignore
-            ...colours[annotField],
-            id: id,
-            [target.value]: colourPalette[id] ? colourPalette[id] : 'black',
+            ...annotationsConfig[annotField],
+            id: annotField,
+            show,
+            fields: {
+              // @ts-ignore
+              ...annotationsConfig[annotField].fields,
+              [target.value]: colourPalette[i] ? colourPalette[i] : 'black',
+            },
           },
         }
       }
@@ -238,11 +254,13 @@ export async function fetchLocalData(
         x: annotField,
         y: colourPalette.findIndex(
           // @ts-ignore
-          (colour) => colour === colours[annotField][target.value],
+          (colour) =>
+            // @ts-ignore
+            colour === annotationsConfig[annotField].fields[target.value],
         ),
         value: target.value,
         // @ts-ignore
-        colour: colours[annotField][target.value],
+        colour: annotationsConfig[annotField].fields[target.value],
       })
     })
 
@@ -269,7 +287,7 @@ export async function fetchLocalData(
     geneModelData,
     subjectIds,
     canonicalExons,
-    colours,
+    annotationsConfig,
   }
 }
 

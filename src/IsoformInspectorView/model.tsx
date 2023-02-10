@@ -42,11 +42,10 @@ export default function IsoformInspectorView() {
       width: 800,
       height: 500,
       keys: types.array(types.string),
-      hiddenAnnotations: types.array(types.string),
       colourPalette: types.frozen(nmetPalette),
       defaultPalettes: types.frozen([nmetPalette, paultPalette]),
       geneModel: types.frozen(),
-      colours: types.frozen(), // consider changing this to be annotationsConfig
+      annotationsConfig: types.frozen({}),
       showRows: true,
       showCols: true,
       showCanonicalExons: true,
@@ -91,74 +90,41 @@ export default function IsoformInspectorView() {
       setGeneModel(model: any) {
         self.geneModel = model
       },
-      addHiddenAnnotation(annot: string) {
-        self.hiddenAnnotations.push(annot)
-      },
-      removeHiddenAnnotation(annot: string) {
-        self.hiddenAnnotations.remove(annot)
-      },
-      setNivoAnnotation(field: string, state: boolean) {
+      setNivoAnnotations(annotsToHide: Array<{}>) {
         let revisedAnnots: Array<{}> = []
         let revisedData: Array<{}> = []
-        self.colours[field].show = state
+        let revisedConfig = {
+          ...self.annotationsConfig,
+        }
 
-        self.nivoData.data.forEach((subject: any) => {
-          subject.annotation.data.forEach((annotField: any) => {
-            if (self.colours[annotField.x].show) {
-              revisedData.push(annotField)
-            }
-          })
-          revisedAnnots = [
-            ...revisedAnnots,
-            { id: subject.id, data: revisedData },
-          ]
-          revisedData = []
-        })
-
-        self.nivoAnnotations = revisedAnnots
-      },
-      setNivoAnnotations(annotsToHide: Array<string>, colours: any) {
-        let revisedAnnots: Array<{}> = []
-        let revisedData: Array<{}> = []
-        let revisedColours: Array<{}> = []
-
-        self.nivoData.data.forEach((subject: any) => {
-          subject.annotation.data.forEach((annotField: any) => {
-            if (!annotsToHide.find((annot: any) => annot === annotField.x)) {
-              revisedData.push(annotField)
-            }
-          })
-          revisedAnnots = [
-            ...revisedAnnots,
-            { id: subject.id, data: revisedData },
-          ]
-          revisedData = []
-        })
-        Object.entries(colours).forEach(([key, value]) => {
-          if (!colours.show) {
-            // @ts-ignore
-            revisedColours[key] = {
-              fields: {
-                ...colours[key],
-              },
-              show: true,
-              id: key,
-              palette: {
-                name: 'nmetPalette',
-                value: nmetPalette,
-              },
-            }
-          }
-
-          if (annotsToHide.find((annot: any) => annot === key))
-            // @ts-ignore
-            revisedColours[key] = {
+        Object.entries(self.annotationsConfig).forEach(([key, value]) => {
+          const target = annotsToHide.find((annot: any) => annot.field === key)
+          if (target) {
+            const newConfig = {
               // @ts-ignore
-              ...revisedColours[key],
-              show: false,
+              ...value,
+              // @ts-ignore
+              show: target.show,
             }
+            // @ts-ignore
+            revisedConfig[key] = newConfig
+          }
         })
-        self.colours = revisedColours
+
+        self.nivoData.data.forEach((subject: any) => {
+          subject.annotation.data.forEach((annotField: any) => {
+            // @ts-ignore
+            if (revisedConfig[annotField.x].show) {
+              revisedData.push(annotField)
+            }
+          })
+          revisedAnnots = [
+            ...revisedAnnots,
+            { id: subject.id, data: revisedData },
+          ]
+          revisedData = []
+        })
+        self.annotationsConfig = revisedConfig
         self.nivoAnnotations = revisedAnnots
       },
       setOnLoadProperties(data: any) {
@@ -182,31 +148,8 @@ export default function IsoformInspectorView() {
           self.nivoData.data,
           self.geneModelData,
         )
-        // self.colours = data.colours
-        console.log(data.colours)
-        // TODO: when a settings option is added, these can be toggled through that instead of hardcoded
-        this.setNivoAnnotations(
-          [
-            'File ID',
-            'Object ID',
-            'File Name',
-            'ICGC Donor',
-            'Specimen ID',
-            'Repository',
-            'Study',
-            'Data Type',
-            'Experimental Strategy',
-            'Format',
-            'Size (bytes)',
-            'file_id',
-            'object_id',
-            'filename',
-            'donor_id',
-            'specimen_id',
-            'size',
-          ],
-          data.colours,
-        )
+        self.annotationsConfig = data.annotationsConfig
+        this.setNivoAnnotations([])
       },
     }))
     .actions((self) => ({
@@ -255,7 +198,7 @@ export default function IsoformInspectorView() {
         self.geneId = geneId
       },
       setColours(colours: any) {
-        self.colours = colours
+        self.annotationsConfig = colours
       },
       getAndSetNivoData() {
         self.nivoData = getNivoHmData(
