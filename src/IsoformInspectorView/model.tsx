@@ -1,10 +1,12 @@
 import { MenuItem } from '@jbrowse/core/ui'
 import { ElementId } from '@jbrowse/core/util/types/mst'
 import { types, Instance, flow } from 'mobx-state-tree'
-import { fetchLocalData, getNivoHmData, mapSpliceJunctions } from './FetchData'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
 import { getSession } from '@jbrowse/core/util'
+
+import { fetchLocalData, getNivoHmData, mapSpliceJunctions } from './FetchData'
+import ToggleAnnotationsDialog from './components/ToggleAnnotationsDialog'
 
 // colour-blind friendly palette retrieved from https://www.nature.com/articles/nmeth.1618
 const nmetPalette = [
@@ -37,7 +39,6 @@ export default function IsoformInspectorView() {
       dataState: 'noData',
       initialized: false,
       geneId: '',
-      colors: 'greens',
       width: 800,
       height: 500,
       keys: types.array(types.string),
@@ -45,7 +46,7 @@ export default function IsoformInspectorView() {
       colourPalette: types.frozen(nmetPalette),
       defaultPalettes: types.frozen([nmetPalette, paultPalette]),
       geneModel: types.frozen(),
-      colours: types.frozen(),
+      colours: types.frozen(), // consider changing this to be annotationsConfig
       showRows: true,
       showCols: true,
       showCanonicalExons: true,
@@ -96,6 +97,26 @@ export default function IsoformInspectorView() {
       removeHiddenAnnotation(annot: string) {
         self.hiddenAnnotations.remove(annot)
       },
+      setNivoAnnotation(field: string, state: boolean) {
+        let revisedAnnots: Array<{}> = []
+        let revisedData: Array<{}> = []
+        self.colours[field].show = state
+
+        self.nivoData.data.forEach((subject: any) => {
+          subject.annotation.data.forEach((annotField: any) => {
+            if (self.colours[annotField.x].show) {
+              revisedData.push(annotField)
+            }
+          })
+          revisedAnnots = [
+            ...revisedAnnots,
+            { id: subject.id, data: revisedData },
+          ]
+          revisedData = []
+        })
+
+        self.nivoAnnotations = revisedAnnots
+      },
       setNivoAnnotations(annotsToHide: Array<string>, colours: any) {
         let revisedAnnots: Array<{}> = []
         let revisedData: Array<{}> = []
@@ -114,11 +135,18 @@ export default function IsoformInspectorView() {
           revisedData = []
         })
         Object.entries(colours).forEach(([key, value]) => {
-          if (!colours.hide) {
+          if (!colours.show) {
             // @ts-ignore
             revisedColours[key] = {
-              ...colours[key],
-              hide: false,
+              fields: {
+                ...colours[key],
+              },
+              show: true,
+              id: key,
+              palette: {
+                name: 'nmetPalette',
+                value: nmetPalette,
+              },
             }
           }
 
@@ -127,8 +155,7 @@ export default function IsoformInspectorView() {
             revisedColours[key] = {
               // @ts-ignore
               ...revisedColours[key],
-              ...colours[key],
-              hide: true,
+              show: false,
             }
         })
         self.colours = revisedColours
@@ -156,6 +183,7 @@ export default function IsoformInspectorView() {
           self.geneModelData,
         )
         // self.colours = data.colours
+        console.log(data.colours)
         // TODO: when a settings option is added, these can be toggled through that instead of hardcoded
         this.setNivoAnnotations(
           [
@@ -226,8 +254,8 @@ export default function IsoformInspectorView() {
       setGeneId(geneId: string) {
         self.geneId = geneId
       },
-      setColors(colors: string) {
-        self.colors = colors
+      setColours(colours: any) {
+        self.colours = colours
       },
       getAndSetNivoData() {
         self.nivoData = getNivoHmData(
@@ -274,6 +302,12 @@ export default function IsoformInspectorView() {
       },
       toggleCoveragePlot() {
         self.showCovPlot = !self.showCovPlot
+      },
+      toggleAnnotationsBars() {
+        getSession(self).queueDialog((handleClose) => [
+          ToggleAnnotationsDialog,
+          { model: self, handleClose },
+        ])
       },
     }))
     .views((self) => ({
@@ -343,6 +377,13 @@ export default function IsoformInspectorView() {
                 },
               },
             ],
+          },
+          {
+            label: 'Annotations...',
+            icon: VisibilityOffIcon,
+            onClick: () => {
+              self.toggleAnnotationsBars()
+            },
           },
           {
             label: 'Toggle junction mode',

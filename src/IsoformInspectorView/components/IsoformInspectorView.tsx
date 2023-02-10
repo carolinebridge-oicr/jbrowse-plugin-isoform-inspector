@@ -165,30 +165,36 @@ const AnnotationLegend = observer(({ model }: { model: any }) => {
       }}
     >
       {Object.entries(model.colours).map(([key, value]) => {
-        if (model.colours[key].hide === false) {
+        if (model.colours[key].show === true) {
           return (
             <div key={`${key}_legend`}>
               <div style={{ fontWeight: 'bold' }}>{key}</div>
-              {Object.entries(model.colours[key]).map(([pKey, pValue]) => {
-                if (pKey !== 'index' && pKey !== 'hide') {
-                  return (
-                    <div
-                      key={`${pKey}_legend`}
-                      style={{ display: 'flex', alignItems: 'center', gap: 2 }}
-                    >
+              {Object.entries(model.colours[key].fields).map(
+                ([pKey, pValue]) => {
+                  if (pKey !== 'id') {
+                    return (
                       <div
+                        key={`${pKey}_legend`}
                         style={{
-                          background: model.colours[key][pKey],
-                          width: 10,
-                          height: 10,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 2,
                         }}
-                      />
-                      <div>{pKey}</div>
-                    </div>
-                  )
-                }
-                return null
-              })}
+                      >
+                        <div
+                          style={{
+                            background: pValue as string,
+                            width: 10,
+                            height: 10,
+                          }}
+                        />
+                        <div>{pKey}</div>
+                      </div>
+                    )
+                  }
+                  return null
+                },
+              )}
             </div>
           )
         }

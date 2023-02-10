@@ -212,7 +212,7 @@ export async function fetchLocalData(
         colours = {
           ...colours,
           [annotField]: {
-            index: 0,
+            id: 0,
             [target.value]:
               // @ts-ignore
               colourPalette[0],
@@ -223,16 +223,14 @@ export async function fetchLocalData(
       const colour = colours[annotField][target.value]
       if (!colour) {
         // @ts-ignore
-        const index = colours[annotField].index + 1
+        const id = colours[annotField].id + 1
         colours = {
           ...colours,
           [annotField]: {
             // @ts-ignore
             ...colours[annotField],
-            index: index,
-            [target.value]: colourPalette[index]
-              ? colourPalette[index]
-              : 'black',
+            id: id,
+            [target.value]: colourPalette[id] ? colourPalette[id] : 'black',
           },
         }
       }
