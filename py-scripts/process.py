@@ -25,8 +25,9 @@ def parse_anno(annotation_files) -> dict:
   global sample_id_header
   annotations = {}
   for anno in annotation_files:
+    delim = ',' if anno.endsWith('.csv') else '\t' # takes csv or tsv files as annotations
     with open(anno, 'r') as a:
-      reader = csv.DictReader(a, delimiter="\t")
+      reader = csv.DictReader(a, delimiter=delim)
       file_name_header = ''
 
       for row in reader:
