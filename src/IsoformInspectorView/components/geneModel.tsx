@@ -1,6 +1,8 @@
 import React from 'react'
 import { observer } from 'mobx-react-lite'
-import { Chip } from '@mui/material'
+import { Chip, Tooltip } from '@mui/material'
+import ArrowCircleLeftIcon from '@mui/icons-material/ArrowCircleLeft'
+import ArrowCircleRightIcon from '@mui/icons-material/ArrowCircleRight'
 
 export const GeneModel = ({
   model,
@@ -34,12 +36,24 @@ export const GeneModel = ({
   const realHeight =
     canonicalHeight + 30 * (model.geneModelData?.transcripts.length + 5)
 
+  const isBackward =
+    model.geneModelData?.transcripts[0].strand == -1 ? true : false
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', paddingTop: 5 }}>
-      <Chip
-        label={model.geneModelData?.gene_name}
-        style={{ width: 'fit-content' }}
-      />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '5' }}>
+        <Tooltip title="Gene direction">
+          {isBackward ? (
+            <ArrowCircleLeftIcon fontSize="large" color="primary" />
+          ) : (
+            <ArrowCircleRightIcon fontSize="large" color="primary" />
+          )}
+        </Tooltip>
+        <Chip
+          label={model.geneModelData?.gene_name}
+          style={{ width: 'fit-content' }}
+        />
+      </div>
       <svg width={width} height={realHeight}>
         <g>
           {model.canonicalExons.map((exon: any) => {

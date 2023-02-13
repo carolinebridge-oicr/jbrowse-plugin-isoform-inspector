@@ -154,7 +154,6 @@ const Crosshair = observer(
 
 const AnnotationLegend = observer(({ model }: { model: any }) => {
   if (!model.annotationsConfig) return null
-  console.log(model.annotationsConfig)
   return (
     <div
       style={{
