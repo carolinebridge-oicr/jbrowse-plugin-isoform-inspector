@@ -25,7 +25,7 @@ def parse_anno(annotation_files) -> dict:
   global sample_id_header
   annotations = {}
   for anno in annotation_files:
-    delim = ',' if anno.endsWith('.csv') else '\t' # takes csv or tsv files as annotations
+    delim = ',' if anno.endswith('.csv') else '\t' # takes csv or tsv files as annotations
     with open(anno, 'r') as a:
       reader = csv.DictReader(a, delimiter=delim)
       file_name_header = ''
@@ -221,7 +221,7 @@ def main(gff, gene_id, seq_files, annotation_files, output_dir):
     output_file = os.path.join(output_dir, f"{gene_id}_subj_observ_{i}.json")
     i += 1
 
-  with open(output_file, 'w') as j:
+  with open(output_file, 'w+') as j:
     j.write(json.dumps(output, indent=2))
 
 if __name__ == '__main__':
