@@ -25,7 +25,7 @@ const Tooltip = observer(
       tooltipLineC = `Annotation value: ${model.currentAnnotation.value}`
 
       xPos = model.uiState.currentX + 10
-      yPos = model.uiState.currentY + 65 + 10
+      yPos = model.uiState.currentY + model.top + 10
     }
 
     if (model.uiState.currentPanel === 'heatmap') {
@@ -34,7 +34,7 @@ const Tooltip = observer(
       tooltipLineC = `Read count: ${model.currentScoreVal}`
 
       xPos = model.uiState.currentX + width * 0.1 + 20
-      yPos = model.uiState.currentY + 65 + 10
+      yPos = model.uiState.currentY + model.top + 10
     }
 
     if (model.uiState.currentPanel === 'featureLabels') {
@@ -116,7 +116,7 @@ const Crosshair = observer(
       xPos = model.uiState.currentX + width * 0.1 + gap
     }
     return (
-      <svg width={width} height={height} y={65}>
+      <svg width={width} height={height} y={model.top}>
         {yPos <= height ? (
           <g>
             <Line
@@ -138,7 +138,7 @@ const Crosshair = observer(
               }}
               to={{
                 x: xPos,
-                y: height - 65,
+                y: height - model.top,
               }}
               stroke={accentColorDark}
               strokeWidth={2}

@@ -34,7 +34,7 @@ export const Heatmap = ({
           axisLeft={null}
           enableLabels={false}
           inactiveOpacity={1}
-          margin={{ top: 65, right: 2, bottom: 2, left: 2 }}
+          margin={{ top: model.top, right: 2, bottom: 2, left: 2 }}
           colors={{
             type: 'sequential',
             scheme: 'oranges', // TODO: colour of the heatmap and annotations to be freely selectable

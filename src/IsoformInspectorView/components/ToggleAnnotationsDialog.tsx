@@ -75,33 +75,34 @@ export default observer(function ToggleAnnotationsDialog({
         )
       },
     },
-    {
-      field: 'colour',
-      headerName: 'Colour scheme',
-      flex: 1,
-      align: 'center',
-      headerAlign: 'center',
-      // renderCell: (param: any) => {
-      //   const [selectedValue, setSelectedValue] = useState(param.value.name)
-      //   return (
-      //     <Select
-      //       value={selectedValue}
-      //       onChange={() => {
-      //         console.log('apply colour scheme to the field')
-      //       }}
-      //       sx={{ height: '35px' }}
-      //     >
-      //       {/* {model.colourPalettes.map((scheme: any) => {
-      //         return (
-      //           <MenuItem key={scheme.name} value={scheme.name}>
-      //             {scheme.name}
-      //           </MenuItem>
-      //         )
-      //       })} */}
-      //     </Select>
-      //   )
-      // },
-    },
+    // TODO: wip
+    // {
+    //   field: 'colour',
+    //   headerName: 'Colour scheme',
+    //   flex: 1,
+    //   align: 'center',
+    //   headerAlign: 'center',
+    //   renderCell: (param: any) => {
+    //     const [selectedValue, setSelectedValue] = useState(param.value.name)
+    //     return (
+    //       <Select
+    //         value={selectedValue}
+    //         onChange={() => {
+    //           console.log('apply colour scheme to the field')
+    //         }}
+    //         sx={{ height: '35px' }}
+    //       >
+    //         {/* {model.colourPalettes.map((scheme: any) => {
+    //           return (
+    //             <MenuItem key={scheme.name} value={scheme.name}>
+    //               {scheme.name}
+    //             </MenuItem>
+    //           )
+    //         })} */}
+    //       </Select>
+    //     )
+    //   },
+    // },
   ]
   return (
     <Dialog open onClose={() => handleClose()} maxWidth="sm">

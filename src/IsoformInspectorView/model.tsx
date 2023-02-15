@@ -3,6 +3,7 @@ import { ElementId } from '@jbrowse/core/util/types/mst'
 import { types, Instance, flow } from 'mobx-state-tree'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
+import SpeakerNotesIcon from '@mui/icons-material/SpeakerNotes'
 import { getSession } from '@jbrowse/core/util'
 
 import { fetchLocalData, getNivoHmData, mapSpliceJunctions } from './FetchData'
@@ -41,6 +42,7 @@ export default function IsoformInspectorView() {
       geneId: '',
       width: 800,
       height: 500,
+      top: 65,
       keys: types.array(types.string),
       colourPalette: types.frozen(nmetPalette),
       defaultPalettes: types.frozen([nmetPalette, paultPalette]),
@@ -90,6 +92,9 @@ export default function IsoformInspectorView() {
       setGeneModel(model: any) {
         self.geneModel = model
       },
+      setTop(top: number) {
+        self.top = top
+      },
       setNivoAnnotations(annotsToHide: Array<{}>) {
         let revisedAnnots: Array<{}> = []
         let revisedData: Array<{}> = []
@@ -114,7 +119,7 @@ export default function IsoformInspectorView() {
         self.nivoData.data.forEach((subject: any) => {
           subject.annotation.data.forEach((annotField: any) => {
             // @ts-ignore
-            if (revisedConfig[annotField.x].show) {
+            if (revisedConfig[annotField.x]?.show) {
               revisedData.push(annotField)
             }
           })
@@ -148,7 +153,8 @@ export default function IsoformInspectorView() {
           self.nivoData.data,
           self.geneModelData,
         )
-        self.annotationsConfig = data.annotationsConfig
+        if (Object.keys(self.annotationsConfig).length === 0)
+          self.annotationsConfig = data.annotationsConfig
         this.setNivoAnnotations([])
       },
     }))
@@ -323,7 +329,7 @@ export default function IsoformInspectorView() {
           },
           {
             label: 'Annotations...',
-            icon: VisibilityOffIcon,
+            icon: SpeakerNotesIcon,
             onClick: () => {
               self.toggleAnnotationsBars()
             },
