@@ -134,21 +134,26 @@ export default function IsoformInspectorView() {
         self.annotationsConfig = revisedConfig
         self.nivoAnnotations = revisedAnnots
       },
-      setOnLoadProperties(data: any) {
-        this.setSubjects(data.subjects)
-        this.setSubjectIds(data.subjectIds)
-        self.data = data
-        self.dataState = 'done'
+      getAndSetNivoData() {
         self.nivoData = getNivoHmData(
           self.dataState,
           self.showCols,
           self.cluster,
           self.data.subjects,
         )
-        // TODO: currently only sorted by id, eventually sorted by other traits
-        self.nivoData.data.sort((a: any, b: any) => {
-          return a.id.localeCompare(b.id)
-        })
+      },
+      setOnLoadProperties(data: any) {
+        this.setSubjects(data.subjects)
+        this.setSubjectIds(data.subjectIds)
+        self.data = data
+        self.dataState = 'done'
+        this.getAndSetNivoData()
+        if (!self.cluster) {
+          // TODO: currently only sorted by id, eventually sorted by other traits
+          self.nivoData.data.sort((a: any, b: any) => {
+            return a.id.localeCompare(b.id)
+          })
+        }
         self.canonicalExons = data.canonicalExons
         self.geneModelData = data.geneModelData
         self.spliceJunctions = mapSpliceJunctions(
@@ -208,21 +213,13 @@ export default function IsoformInspectorView() {
       setColours(colours: any) {
         self.annotationsConfig = colours
       },
-      getAndSetNivoData() {
-        self.nivoData = getNivoHmData(
-          self.dataState,
-          self.showCols,
-          self.cluster,
-          self.data.subjects,
-        )
-      },
       runClustering() {
         const session = getSession(self)
         if (self.cluster) {
           session.notify('The data is already clustered', 'info')
         } else {
           self.cluster = true
-          this.getAndSetNivoData()
+          self.getAndSetNivoData()
           self.setNivoAnnotations([])
           session.notify('The data has been clustered', 'info')
         }
@@ -243,14 +240,14 @@ export default function IsoformInspectorView() {
           self.showCols = !self.showCols
           // hide columns with no reads
           if (!self.showCols) {
-            this.getAndSetNivoData()
+            self.getAndSetNivoData()
 
             session.notify(
               'Columns with no reads have been hidden on the heatmap',
               'info',
             )
           } else {
-            this.getAndSetNivoData()
+            self.getAndSetNivoData()
 
             session.notify(
               'Columns with no reads have been revealed on the heatmap',
@@ -367,7 +364,7 @@ export default function IsoformInspectorView() {
                 },
               },
               {
-                label: 'by location',
+                label: 'by subject id',
                 disabled: true,
                 onClick: () => {
                   self.cluster = false
