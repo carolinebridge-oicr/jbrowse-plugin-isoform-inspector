@@ -1,3 +1,4 @@
+import { clusterData } from '@greenelab/hclust'
 const localDataFolder = 'data'
 
 export interface Feature {
@@ -294,14 +295,14 @@ export async function fetchLocalData(
 export function getNivoHmData(
   dataState: string,
   showCols: boolean,
-  subjectType: string,
+  cluster: boolean,
   subjects: Array<Subject>,
 ) {
   if (dataState === 'done') {
     const { subject, features, data } = getHeatmapData(
-      subjectType,
       subjects,
       showCols,
+      cluster,
     )
     return { subject, features, data }
   }
@@ -309,31 +310,37 @@ export function getNivoHmData(
 }
 
 function getHeatmapData(
-  subjectType: string,
   subjects: Array<Subject>,
   showCols: boolean,
+  cluster: boolean,
 ) {
   let keys: Array<string> = []
   let nivoData: any[] = []
 
   subjects.forEach((subj, i) => {
     const nivoDataObj: Array<any> = []
+    const justReads: Array<any> = []
     subj.features.forEach((feature) => {
       nivoDataObj.push({
         x: feature.feature_id,
         y: feature.value,
         status: feature.status ? feature.status : '',
       })
+      justReads.push(feature.value)
     })
     nivoData.push({
       id: subj.subject_id,
       data: nivoDataObj,
+      justReads,
       annotation: subj.annotation,
     })
   })
 
   if (!showCols) {
     nivoData = filterNoDataColumns(nivoData)
+  }
+  if (cluster) {
+    nivoData = runClustering(nivoData)
   }
 
   return {
@@ -355,6 +362,13 @@ export function filterNoDataColumns(data: any) {
     }
   })
 
+  return result
+}
+
+function runClustering(data: any) {
+  const result = clusterData({ data, key: 'justReads' }).order.map(
+    (i: number) => data[i],
+  )
   return result
 }
 

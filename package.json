@@ -72,6 +72,7 @@
     "@babel/plugin-transform-react-jsx": "^7.19.0",
     "@babel/preset-react": "^7.10.4",
     "@emotion/react": "^11.10.4",
+    "@greenelab/hclust": "^0.0.1",
     "@jbrowse/cli": "^1.5.1",
     "@jbrowse/core": "^2.0.0",
     "@jbrowse/development-tools": "^2.0.0",

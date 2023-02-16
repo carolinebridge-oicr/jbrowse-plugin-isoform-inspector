@@ -9,6 +9,9 @@ import argparse
 import scanpy as sc
 import random as rd
 from re import sub
+import time
+
+start = time.time()
 
 sample_id_header = 'subject_id'
 
@@ -36,7 +39,7 @@ def parse_anno(annotation_files) -> dict:
             snake_field = snake_case(key)
             if (snake_field == 'file_name'):
               file_name_header = key
-            if (snake_field == 'subject_id' or snake_field == 'sample_id'):
+            if (snake_field == 'subject_id' or snake_field == 'sample_id'): # TODO: barcode for single cell?
               sample_id_header = key
         if file_name_header == '':
           raise Exception(f"Annotation file '{anno}' does not contain required 'filename' field.")
@@ -191,16 +194,22 @@ def main(gff, gene_id, seq_files, annotation_files, output_dir):
   feature_type = "junction_quantifications"
   subject_type = "sample"
 
+  print('Operation 1/3: Parsing annotations file...', flush=True)
   # parse annotation files, which are TSV files providing additional information about sequencing files
   annotations = parse_anno(annotation_files)
 
+  print('Operation 2/3: Parsing gff3 file...', flush=True)
   # parse gff
   gene = parse_gff3(gff, gene_id)
 
   subjects_arr = []
 
+  print('Operation 3/3: Extracting read counts...', flush=True)
+  i = 0
   # extract read counts
   for f in seq_files:
+    i+=1
+    print(f'\t{i}/{len(seq_files)}: processing file {f}', flush=True)
     subject = extract_read_counts(f, annotations, gene)
     subjects_arr.append(subject)
 
@@ -224,6 +233,9 @@ def main(gff, gene_id, seq_files, annotation_files, output_dir):
   with open(output_file, 'w+') as j:
     j.write(json.dumps(output, indent=2))
 
+  end = time.time()
+  print(f'Execution time: {end - start} seconds')
+
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(
     description='Script to count reads for exons and junctions of a given gene')
@@ -234,7 +246,7 @@ if __name__ == '__main__':
   parser.add_argument('-s', '--seq-file', type=str, nargs='+',
                     help='Sequencing file(s)', required=True)
   parser.add_argument('-a', '--annotation-file', type=str, nargs='+',
-                    help='Annotation file(s) providing more info about samples', required=True)
+                    help='Annotation file(s) providing more info about samples, must contain a file_name field', required=True)
   parser.add_argument('-o', '--output-dir', type=str, default='../public/data',
                     help='Output directory')
   args = parser.parse_args()

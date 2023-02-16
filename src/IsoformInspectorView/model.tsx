@@ -4,6 +4,7 @@ import { types, Instance, flow } from 'mobx-state-tree'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
 import SpeakerNotesIcon from '@mui/icons-material/SpeakerNotes'
+import HighlightIcon from '@mui/icons-material/Highlight'
 import { getSession } from '@jbrowse/core/util'
 
 import { fetchLocalData, getNivoHmData, mapSpliceJunctions } from './FetchData'
@@ -50,6 +51,7 @@ export default function IsoformInspectorView() {
       annotationsConfig: types.frozen({}),
       showRows: true,
       showCols: true,
+      cluster: false,
       showCanonicalExons: true,
       showCovPlot: true,
     })
@@ -140,7 +142,7 @@ export default function IsoformInspectorView() {
         self.nivoData = getNivoHmData(
           self.dataState,
           self.showCols,
-          self.data.subjectType,
+          self.cluster,
           self.data.subjects,
         )
         // TODO: currently only sorted by id, eventually sorted by other traits
@@ -210,9 +212,20 @@ export default function IsoformInspectorView() {
         self.nivoData = getNivoHmData(
           self.dataState,
           self.showCols,
-          self.data.subjectType,
+          self.cluster,
           self.data.subjects,
         )
+      },
+      runClustering() {
+        const session = getSession(self)
+        if (self.cluster) {
+          session.notify('The data is already clustered', 'info')
+        } else {
+          self.cluster = true
+          this.getAndSetNivoData()
+          self.setNivoAnnotations([])
+          session.notify('The data has been clustered', 'info')
+        }
       },
       toggleHeatmapData(location: 'row' | 'column') {
         const session = getSession(self)
@@ -287,6 +300,7 @@ export default function IsoformInspectorView() {
               },
               {
                 label: 'Emphasize cell/sample',
+                icon: HighlightIcon,
                 disabled: true,
                 onClick: () => {
                   console.log(
@@ -348,17 +362,15 @@ export default function IsoformInspectorView() {
             subMenu: [
               {
                 label: 'by clustering',
-                disabled: true,
                 onClick: () => {
-                  console.log(
-                    'without further intervention sorts by the clustering algorithm, does nothing if already sorted by this',
-                  )
+                  self.runClustering()
                 },
               },
               {
                 label: 'by location',
                 disabled: true,
                 onClick: () => {
+                  self.cluster = false
                   console.log(
                     'without further intervention sorts by the feature location, does nothing if already sorted by this',
                   )
@@ -368,6 +380,7 @@ export default function IsoformInspectorView() {
                 label: 'by annotation',
                 disabled: true,
                 onClick: () => {
+                  self.cluster = false
                   console.log(
                     'opens a sorting menu and allows user to select an annotation to sort by e.g. all specimens in project A appear first',
                   )
