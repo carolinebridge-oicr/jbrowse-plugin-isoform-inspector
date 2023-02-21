@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os
+import os.path
 import csv
 import json
 import gffutils
@@ -10,6 +10,7 @@ import scanpy as sc
 import random as rd
 from re import sub
 import time
+import subprocess
 
 start = time.time()
 
@@ -142,11 +143,13 @@ def extract_read_counts(f, annotations, gene):
     subj_annotations = output_anno(anno)
 
   value = []
+  print(seq_filename)
   if (f.lower().endswith('.bam')):
     samfile = pysam.AlignmentFile(f, "rb")
     # gene reads spanning across junctions
     # this may be optimized later, should ideally stream the reads once
     junction_quant = []
+    print(gene['junctions'])
     for junction in gene['junctions']:
       chr = gene['junctions'][junction]['chr']
       start = gene['junctions'][junction]['start']
@@ -182,15 +185,14 @@ def extract_read_counts(f, annotations, gene):
 
   return subject
 
-def main(gff, gene_id, seq_files, annotation_files, output_dir):
-  # TODO: run gene model script prior, so there's only one script execution step
+def main(score_client, manifest, seq_file_output_dir, gff, annotation_files, output_dir, gene_id):
+  # TODO: host gff files for common assemblies on aws and fetch them instead of requiring the user to do so
 
   # TODO: create compatibility step for "exon" counts
 
-  # TODO: create compatibility step for TSV's from the GDC
-
   # TODO: complete compatibility step for AnnData files
-  ## if seq_files ends with .h5ad feature_type = gene_expression
+
+  # define some process variables, allows extensibility in the future
   feature_type = "junction_quantifications"
   subject_type = "sample"
 
@@ -204,15 +206,56 @@ def main(gff, gene_id, seq_files, annotation_files, output_dir):
 
   subjects_arr = []
 
-  print('Operation 3/3: Extracting read counts...', flush=True)
-  i = 0
-  # extract read counts
-  for f in seq_files:
-    i+=1
-    print(f'\t{i}/{len(seq_files)}: processing file {f}', flush=True)
-    subject = extract_read_counts(f, annotations, gene)
-    subjects_arr.append(subject)
+  if (score_client):
+    # user is bulk processing while downloading
+    if (not manifest):
+      raise Exception(
+        f'A manifest file must be provided to bulk download and process files.'
+      )
+    files = []
+    # read the manifest to see how many files are being downloaded and what their names are
+    with open (manifest) as f:
+      reader = csv.DictReader(f, delimiter='\t')
+      for row in reader:
+        files.append(row['file_name'])
+    # open the download process and begin
+    download_process = subprocess.Popen([f'{score_client}', 'download', '--manifest', f'{manifest}', '--output-dir', f'{seq_file_output_dir}'])
 
+    # poll the process for completion, continue processing until each file has been processed
+    i = 0
+    print('Operation 3/3: Extracting read counts...', flush=True)
+    check_f = open('output.txt', 'w')
+    while (download_process.poll() is None and i < len(files)):
+      current_bam = f'{seq_file_output_dir}{files[i]}'
+      current_bai = f'{seq_file_output_dir}{files[i]}.bai'
+      # check if the currently downloading file exists 
+      if (os.path.isfile(current_bam)):
+        # assumes the bai file was downloaded first, which seems to be the case with score
+        print(f'\t{i+1}/{len(files)}: processing file {files[i]}', flush=True, file=check_f)
+        subject = extract_read_counts(current_bam, annotations, gene)
+        subjects_arr.append(subject)
+        subprocess.Popen(['rm', f'{current_bam}', f'{current_bai}'])
+        # file has finished processing, iterate the counter and wait until the next files are done
+        i+=1
+  else:
+    # user is processing existing files on the system
+    print('Operation 3/3: Extracting read counts...', flush=True)
+    i = 0
+    seq_files = []
+    for f in os.listdir(seq_file_output_dir):
+      filename = f'{seq_file_output_dir}{f}'
+      if os.path.isfile(filename) and f.endswith('.bam'):
+        seq_files.append(filename)
+    # seq_files = f'{seq_file_output_dir}/*.bam'
+    print(seq_files)
+    # extract read counts
+    for f in seq_files:
+      i+=1
+      print(f'\t{i}/{len(seq_files)}: processing file {f}', flush=True)
+      subject = extract_read_counts(f, annotations, gene)
+      subjects_arr.append(subject)
+
+  # whether bulk downloading or static, output is generated here
   output = {
     "gene_id": gene_id,
     "subject_type": subject_type,
@@ -225,6 +268,7 @@ def main(gff, gene_id, seq_files, annotation_files, output_dir):
 
   # so as to not overwrite other files with other annotation sets for that gene
   # isoform inspector will choose the one without a _n appended
+  # TODO: eventually the front end should be able to process a variety of .jsons for the same gene
   i = 1
   while (os.path.exists(output_file)):
     output_file = os.path.join(output_dir, f"{gene_id}_subj_observ_{i}.json")
@@ -234,21 +278,25 @@ def main(gff, gene_id, seq_files, annotation_files, output_dir):
     j.write(json.dumps(output, indent=2))
 
   end = time.time()
-  print(f'Execution time: {end - start} seconds')
+  print(f'process.py has finished. Execution time: {end - start} seconds')
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(
     description='Script to count reads for exons and junctions of a given gene')
+  parser.add_argument('-c', '--score-client', type=str,
+                help='location of the score client (optional)', required=False)
+  parser.add_argument('-m', '--manifest', type=str,
+                help='manifest file for bulk download and process (optional)', required=False)
+  parser.add_argument('-s', '--seq-file-dir', type=str,
+                    help='directory where sequencing file(s) reside', required=True)
   parser.add_argument('-f', '--gff', type=str,
-                    help='Gff3 file', required=True)
-  parser.add_argument('-g', '--gene-id', type=str,
-                    help='Ensembl gene ID', required=True)
-  parser.add_argument('-s', '--seq-file', type=str, nargs='+',
-                    help='Sequencing file(s)', required=True)
+                    help='gff3 file', required=True)
   parser.add_argument('-a', '--annotation-file', type=str, nargs='+',
-                    help='Annotation file(s) providing more info about samples, must contain a file_name field', required=True)
+                    help='annotation file(s) providing more info about samples, must contain a file_name field', required=True)
   parser.add_argument('-o', '--output-dir', type=str, default='../public/data',
                     help='Output directory')
+  parser.add_argument('-g', '--gene-id', type=str,
+                    help='Ensembl gene ID', required=True)
   args = parser.parse_args()
 
-  main(args.gff, args.gene_id, args.seq_file, args.annotation_file, args.output_dir)
+  main(args.score_client, args.manifest, args.seq_file_dir, args.gff, args.annotation_file, args.output_dir, args.gene_id)
