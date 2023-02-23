@@ -3,14 +3,16 @@
 import os.path
 import csv
 import json
-import gffutils
-import pysam
 import argparse
-import scanpy as sc
 import random as rd
 from re import sub
 import time
 import subprocess
+
+# external libs
+import gffutils
+import pysam
+import scanpy as sc
 
 start = time.time()
 
@@ -143,13 +145,11 @@ def extract_read_counts(f, annotations, gene):
     subj_annotations = output_anno(anno)
 
   value = []
-  print(seq_filename)
   if (f.lower().endswith('.bam')):
     samfile = pysam.AlignmentFile(f, "rb")
     # gene reads spanning across junctions
     # this may be optimized later, should ideally stream the reads once
     junction_quant = []
-    print(gene['junctions'])
     for junction in gene['junctions']:
       chr = gene['junctions'][junction]['chr']
       start = gene['junctions'][junction]['start']
@@ -246,8 +246,6 @@ def main(score_client, manifest, seq_file_output_dir, gff, annotation_files, out
       filename = f'{seq_file_output_dir}{f}'
       if os.path.isfile(filename) and f.endswith('.bam'):
         seq_files.append(filename)
-    # seq_files = f'{seq_file_output_dir}/*.bam'
-    print(seq_files)
     # extract read counts
     for f in seq_files:
       i+=1
