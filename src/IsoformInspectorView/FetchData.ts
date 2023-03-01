@@ -76,7 +76,7 @@ function extractExonData(data: any) {
     }
   })
 
-  const maxPixels = 1200 * 0.9
+  const maxPixels = 850 * 0.8
   const pixelsPerBase = maxPixels / (data.end - data.start)
 
   // now we can use our array of introns to advise how to draw the transcripts
@@ -299,12 +299,12 @@ export function getNivoHmData(
   subjects: Array<Subject>,
 ) {
   if (dataState === 'done') {
-    const { subject, features, data } = getHeatmapData(
+    const { subject, features, data, clusterData } = getHeatmapData(
       subjects,
       showCols,
       cluster,
     )
-    return { subject, features, data }
+    return { subject, features, data, clusterData }
   }
   return
 }
@@ -336,17 +336,28 @@ function getHeatmapData(
     })
   })
 
+  // filter out duplicate id's for now
+  nivoData = nivoData.filter(
+    (target: any, index: any, array: any) =>
+      array.findIndex((t: any) => t.id === target.id) === index,
+  )
+
+  let clusterData = {}
+
   if (!showCols) {
     nivoData = filterNoDataColumns(nivoData)
   }
   if (cluster) {
-    nivoData = runClustering(nivoData)
+    const clusterResult = runClustering(nivoData)
+    nivoData = clusterResult.nivoData
+    clusterData = clusterResult.cluster
   }
 
   return {
     subject: 'sample',
     features: keys,
     data: nivoData,
+    clusterData: clusterData,
   }
 }
 
@@ -366,10 +377,11 @@ export function filterNoDataColumns(data: any) {
 }
 
 function runClustering(data: any) {
-  const result = clusterData({ data, key: 'justReads' }).order.map(
-    (i: number) => data[i],
-  )
-  return result
+  const cluster = clusterData({ data, key: 'justReads' })
+  // console.log(cluster)
+  const result = cluster.order.map((i: number) => data[i])
+  // console.log(result)
+  return { cluster, nivoData: result }
 }
 
 export function mapSpliceJunctions(spliceJunctions: any, geneModelData: any) {

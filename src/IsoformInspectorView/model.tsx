@@ -41,7 +41,7 @@ export default function IsoformInspectorView() {
       dataState: 'noData',
       initialized: false,
       geneId: '',
-      width: 800,
+      width: 850,
       height: 500,
       top: 65,
       keys: types.array(types.string),
@@ -58,6 +58,7 @@ export default function IsoformInspectorView() {
     .volatile(() => ({
       data: undefined as unknown as any,
       nivoData: undefined as unknown as any,
+      clusterData: undefined as unknown as any,
       nivoAnnotations: undefined as unknown as any,
       geneModelData: undefined as unknown as any,
       canonicalExons: undefined as unknown as any,
@@ -141,6 +142,7 @@ export default function IsoformInspectorView() {
           self.cluster,
           self.data.subjects,
         )
+        self.clusterData = self.nivoData.clusterData
       },
       setOnLoadProperties(data: any) {
         this.setSubjects(data.subjects)
@@ -190,6 +192,9 @@ export default function IsoformInspectorView() {
       },
       setNivoData(data: any) {
         self.nivoData = data
+      },
+      setClusterData(data: any) {
+        self.clusterData = data
       },
       setDataState(state: string) {
         self.dataState = state

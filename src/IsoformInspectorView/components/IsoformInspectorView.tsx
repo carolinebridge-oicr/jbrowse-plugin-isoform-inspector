@@ -2,10 +2,11 @@ import React from 'react'
 import { observer } from 'mobx-react-lite'
 import { measureText } from '@jbrowse/core/util'
 import { Line } from '@visx/shape'
+import { HeatMapCanvas } from '@nivo/heatmap'
 import Heatmap from './Heatmap'
 import GeneModel from './GeneModel'
 import SubjectAnnotations from './SubjectAnnotations'
-import { HeatMapCanvas } from '@nivo/heatmap'
+import Dendrogram from './Dendrogram'
 
 export const accentColorDark = '#005AB5' // TODO: colour of the crosshair to be freely selectable
 
@@ -261,8 +262,8 @@ const Labels = observer(
 )
 
 const IsoformInspectorView = observer(({ model }: { model: any }) => {
-  const height = 850
-  const width = 1200
+  const height = model.height
+  const width = model.width
   const gap = 5
 
   if (model.geneId) {
@@ -280,7 +281,7 @@ const IsoformInspectorView = observer(({ model }: { model: any }) => {
     >
       <AnnotationLegend model={model} />
       <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <svg width={width + gap} height={height}>
+        <svg width={width * 0.9 + gap} height={height}>
           <svg width={width * 0.1} height={height}>
             <SubjectAnnotations
               model={model}
@@ -288,8 +289,8 @@ const IsoformInspectorView = observer(({ model }: { model: any }) => {
               height={height}
             />
           </svg>
-          <svg width={width * 0.9} height={height} x={width * 0.1 + gap}>
-            <Heatmap model={model} width={width * 0.9} height={height} />
+          <svg width={width * 0.8} height={height} x={width * 0.1 + gap}>
+            <Heatmap model={model} width={width * 0.8} height={height} />
           </svg>
           <Crosshair
             model={model}
@@ -302,11 +303,12 @@ const IsoformInspectorView = observer(({ model }: { model: any }) => {
         <div style={{ display: 'flex' }}>
           <svg width={width * 0.1 + gap} height={500} />
           <div>
-            <Labels model={model} width={width * 0.9} height={height} />
-            <GeneModel model={model} width={width * 0.9} height={500} />
+            <Labels model={model} width={width * 0.8} height={height} />
+            <GeneModel model={model} width={width * 0.8} height={500} />
           </div>
         </div>
       </div>
+      <Dendrogram model={model} width={width * 0.1} height={height} />
     </div>
   )
 })

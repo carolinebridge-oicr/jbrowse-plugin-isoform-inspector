@@ -1,10 +1,6 @@
 import Plugin from '@jbrowse/core/Plugin'
 import PluginManager from '@jbrowse/core/PluginManager'
-import {
-  AbstractSessionModel,
-  isAbstractMenuManager,
-  getSession,
-} from '@jbrowse/core/util'
+import { getSession } from '@jbrowse/core/util'
 import { version } from '../package.json'
 import { fetchLocalData } from './IsoformInspectorView/FetchData'
 
