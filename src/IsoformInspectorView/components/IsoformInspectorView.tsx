@@ -3,10 +3,10 @@ import { observer } from 'mobx-react-lite'
 import { measureText } from '@jbrowse/core/util'
 import { Line } from '@visx/shape'
 import { HeatMapCanvas } from '@nivo/heatmap'
-import Heatmap from './Heatmap'
-import GeneModel from './GeneModel'
+import Heatmap from './heatmap'
+import GeneModel from './geneModel'
 import SubjectAnnotations from './SubjectAnnotations'
-import Dendrogram from './Dendrogram'
+import Dendrogram from './dendrogram'
 
 export const accentColorDark = '#005AB5' // TODO: colour of the crosshair to be freely selectable
 
