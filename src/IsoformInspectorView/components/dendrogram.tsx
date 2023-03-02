@@ -15,16 +15,11 @@ export const Dendrogram = ({
     return null
   }
 
-  // filter out duplicate id's for now, since the heatmap does that automatically
-  // const arr = model.nivoData.data.filter(
-  //   (target: any, index: any, array: any) =>
-  //     array.findIndex((t: any) => t.id === target.id) === index,
-  // )
-
   const offset = model.top
   let iter = 0
   let refArr: Array<number>
   const cellHeight = (height - model.top) / model.nivoData.data.length
+  let secondBranch = 0
   return (
     <svg width={width} height={height}>
       {model.clusterData?.clusters ? (
@@ -34,117 +29,164 @@ export const Dendrogram = ({
             .map(({ source, target }: { source: any; target: any }) => {
               console.log(source, target)
 
+              // the source height will be a percentage of its height in relation to the width of the container
+              // unless it is greater than the width of the container in which case it will be width - 2
+              // unless it is less than 2 in which case it will be 2
+              const srcExpr = source.data.height * (source.data.height / width)
               const srcModHeight =
-                source.data.height * (source.data.height / width) < width
-                  ? source.data.height * (source.data.height / width)
-                  : width - 2
+                srcExpr < width ? (srcExpr > 2 ? srcExpr : 2) : width - 2
+
+              const tgtExpr = target.data.height * (target.data.height / width)
               const tgtModHeight =
-                target.data.height * (target.data.height / width) < width
-                  ? target.data.height * (target.data.height / width)
-                  : width - 2
+                tgtExpr < width
+                  ? target.height === 0 || tgtExpr > 2
+                    ? tgtExpr
+                    : 2
+                  : width - 2 * target.depth
 
               if (source.parent === null) {
                 refArr = source.data.indexes
+                secondBranch += 1
               }
               iter = refArr.findIndex(
                 (ele: any) => ele === target.data.indexes[0],
               )
-              const yi = cellHeight / 2 + cellHeight * iter + offset
+              // a 'base child' is a child who has a height of 0
+              // if the target has no children it is a base child, -1
+              const numBaseChildren = target.children
+                ? target.children.filter((child: any) => child.height === 0)
+                    .length
+                : -1
+              // one base child 」
+              // two base children |
+              // zero base children ]
 
-              if (target.height > 0) {
-                // determines how / when to draw the 」symbol
-                let finalBranch = 0
-                let tallestChild = 0
-                target.children.forEach((child: any) => {
-                  if (child.height !== 0) {
-                    finalBranch += 1
-                    if (child.data.height > tallestChild) {
-                      tallestChild =
-                        child.data.height * (child.data.height / width)
-                    }
-                  }
-                })
-
-                const xi = tgtModHeight > 2 ? tgtModHeight : 2
-                const y2 =
-                  finalBranch === 0 || finalBranch === 2
-                    ? yi + cellHeight * target.height
-                    : yi +
-                      cellHeight * target.height -
-                      (cellHeight / 2) * (target.height - 1)
-                // the vertical line connecting the top of a group, i.e. the parent of children
-                return (
-                  <g>
-                    {finalBranch === 2 ? (
-                      <line
-                        key={`${target.data.indexes[0]}_horiz_link`}
-                        x1={xi}
-                        x2={
-                          target.children[0].data.height *
-                          (target.children[0].data.height / width)
-                        }
-                        y1={finalBranch !== 2 ? yi : yi + cellHeight / 2}
-                        y2={finalBranch !== 2 ? yi : yi + cellHeight / 2}
-                        stroke="black"
-                      />
-                    ) : null}
-                    <line
-                      key={`${target.data.indexes[0]}_dendrogram_vert`}
-                      x1={xi}
-                      x2={xi}
-                      y1={finalBranch !== 2 ? yi : yi + cellHeight / 2}
-                      y2={finalBranch !== 2 ? y2 : y2 + cellHeight / 2}
-                      stroke="black"
-                    />
-                    {finalBranch > 0 ? (
-                      <line
-                        key={`${target.data.indexes[0]}_horiz_link`}
-                        x1={xi}
-                        x2={tallestChild}
-                        y1={finalBranch !== 2 ? y2 : y2 + cellHeight / 2}
-                        y2={finalBranch !== 2 ? y2 : y2 + cellHeight / 2}
-                        stroke="black"
-                      />
-                    ) : null}
-                  </g>
-                )
+              let set = cellHeight / 2
+              if (
+                numBaseChildren === 0 &&
+                target.children[0].data.indexes.length !== 2 &&
+                target.children[1].data.indexes.length !== 2
+              ) {
+                set += cellHeight
               }
 
-              // might not need this, should always be less than the width
-              const srcHeight = srcModHeight < width ? srcModHeight : width - 2
+              let yi = set + cellHeight * iter + offset
+              const y2 = yi + cellHeight * target.height
+
+              let yxi =
+                numBaseChildren !== 0
+                  ? numBaseChildren === 1
+                    ? y2 - (cellHeight / 2) * (target.height - 1)
+                    : y2
+                  : y2 + cellHeight / 2
+
+              if (
+                numBaseChildren === 0 &&
+                target.data.indexes.length % 2 !== 0
+              ) {
+                if (
+                  target.children[0].data.indexes.length !== 2 &&
+                  target.children[1].data.indexes.length !== 2
+                ) {
+                  yxi += (target.height - 2) * (cellHeight / 2)
+                } else {
+                  yxi -= (target.height - 2) * (cellHeight / 2)
+                }
+              }
+
               const parentY =
                 yi +
                 cellHeight * source.height -
                 (cellHeight / 2) * source.height
+
+              const firstTgtChild = target.children
+                ? target.children[0].data.height *
+                  (target.children[0].data.height / width)
+                : 0
+              const secTgtChild = target.children
+                ? target.children[1].data.height *
+                  (target.children[1].data.height / width)
+                : 0
               return (
                 <g>
-                  <line
-                    key={`${target.data.indexes[0]}_dendrogram_horiz`}
-                    x1={target.height}
-                    x2={srcHeight > 2 ? srcHeight : 2}
-                    y1={yi}
-                    y2={yi}
-                    stroke="black"
-                  />
-                  {/* the vertical line connecting the top of the highest parent*/}
-                  {source.parent === null ? (
+                  {/* the first horizontal line drawn */}
+                  {numBaseChildren === -1 || numBaseChildren === 0 ? (
+                    <line
+                      key={`${target.data.indexes[0]}_dendrogram_horiz`}
+                      x1={tgtModHeight}
+                      x2={
+                        numBaseChildren === -1
+                          ? srcModHeight
+                          : firstTgtChild < width
+                          ? firstTgtChild > 2
+                            ? firstTgtChild
+                            : 2
+                          : width - 2 * target.children[0].depth
+                      }
+                      y1={numBaseChildren === -1 ? yi : yi + cellHeight / 2}
+                      y2={numBaseChildren === -1 ? yi : yi + cellHeight / 2}
+                      stroke="black"
+                    />
+                  ) : null}
+                  {/* the vertical line drawn */}
+                  {numBaseChildren > -1 ? (
+                    <line
+                      key={`${target.data.indexes[0]}_dendrogram_vert`}
+                      x1={tgtModHeight}
+                      x2={tgtModHeight}
+                      y1={numBaseChildren !== 0 ? yi : yi + cellHeight / 2}
+                      y2={yxi}
+                      stroke="black"
+                    />
+                  ) : null}
+                  {/* the second horizontal line drawn, or the lower */}
+                  {numBaseChildren < 2 && numBaseChildren >= 0 ? (
+                    <line
+                      key={`${target.data.indexes[0]}_horiz_link`}
+                      x1={tgtModHeight}
+                      x2={
+                        secTgtChild < width
+                          ? secTgtChild > 2
+                            ? secTgtChild
+                            : 2
+                          : width - 2 * target.children[1].depth
+                      }
+                      y1={yxi}
+                      y2={yxi}
+                      stroke="black"
+                    />
+                  ) : null}
+                  {/* the vertical line connecting the top of the highest parent */}
+                  {source.parent === null && secondBranch === 1 ? (
                     <g>
                       <line
+                        key={`${target.data.indexes[0]}_horiz_link_A`}
+                        x1={tgtModHeight}
+                        x2={srcModHeight}
+                        y1={yi}
+                        y2={yi}
+                        stroke="black"
+                      />
+                      <line
                         key={`${target.data.indexes[0]}_dendrogram_vert_root`}
-                        x1={srcHeight}
-                        x2={srcHeight}
+                        x1={srcModHeight}
+                        x2={srcModHeight}
                         y1={yi}
                         y2={parentY}
                         stroke="black"
                       />
                       <line
-                        key={`${target.data.indexes[0]}_horiz_link`}
-                        x1={srcHeight}
+                        key={`${target.data.indexes[0]}_horiz_link_B`}
+                        x1={srcModHeight}
                         x2={
                           tgtModHeight > 0
                             ? tgtModHeight
                             : source.children[1].data.height *
+                                (source.children[1].data.height / width) <
+                              width
+                            ? source.children[1].data.height *
                               (source.children[1].data.height / width)
+                            : width - 2 * source.children[1].depth
                         }
                         y1={parentY}
                         y2={parentY}
