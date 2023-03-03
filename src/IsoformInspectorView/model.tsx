@@ -139,6 +139,7 @@ export default function IsoformInspectorView() {
         self.nivoData = getNivoHmData(
           self.dataState,
           self.showCols,
+          self.showRows,
           self.cluster,
           self.data.subjects,
         )
@@ -150,12 +151,6 @@ export default function IsoformInspectorView() {
         self.data = data
         self.dataState = 'done'
         this.getAndSetNivoData()
-        if (!self.cluster) {
-          // TODO: currently only sorted by id, eventually sorted by other traits
-          self.nivoData.data.sort((a: any, b: any) => {
-            return a.id.localeCompare(b.id)
-          })
-        }
         self.canonicalExons = data.canonicalExons
         self.geneModelData = data.geneModelData
         self.spliceJunctions = mapSpliceJunctions(
@@ -229,40 +224,36 @@ export default function IsoformInspectorView() {
           session.notify('The data has been clustered', 'info')
         }
       },
+      runSortById() {
+        const session = getSession(self)
+        self.cluster = false
+        self.getAndSetNivoData()
+        self.setNivoAnnotations([])
+        session.notify('The data has been sorted by id', 'info')
+      },
       toggleHeatmapData(location: 'row' | 'column') {
         const session = getSession(self)
-        if (location === 'row') {
-          self.showRows = !self.showRows
-
-          // this.getAndSetNivoData()
-
-          session.notify(
-            'Rows with no reads have been hidden on the heatmap',
-            'info',
-          )
-        }
-        if (location === 'column') {
-          self.showCols = !self.showCols
-          // hide columns with no reads
-          if (!self.showCols) {
-            self.getAndSetNivoData()
-
-            session.notify(
-              'Columns with no reads have been hidden on the heatmap',
-              'info',
-            )
-          } else {
-            self.getAndSetNivoData()
-
-            session.notify(
-              'Columns with no reads have been revealed on the heatmap',
-              'info',
-            )
-          }
-        }
+        location === 'row'
+          ? (self.showRows = !self.showRows)
+          : (self.showCols = !self.showCols)
+        self.getAndSetNivoData()
+        session.notify(
+          `${location === 'row' ? 'Rows' : 'Columns'} with no reads have been ${
+            self.showCols ? 'revealed' : 'hidden'
+          } on the heatmap`,
+          'info',
+        )
+        self.setNivoAnnotations([])
       },
       toggleCanonicalExons() {
+        const session = getSession(self)
         self.showCanonicalExons = !self.showCanonicalExons
+        session.notify(
+          `Canonical exon model has been ${
+            self.showCanonicalExons ? 'revealed' : 'hidden'
+          }`,
+          'info',
+        )
       },
       toggleCoveragePlot() {
         self.showCovPlot = !self.showCovPlot
@@ -283,12 +274,8 @@ export default function IsoformInspectorView() {
               {
                 label: `${self.showRows ? 'Hide' : 'Show'} rows with no reads`,
                 icon: self.showRows ? VisibilityOffIcon : VisibilityIcon,
-                disabled: true,
                 onClick: () => {
                   self.toggleHeatmapData('row')
-                  console.log(
-                    'Hides rows with no reads, changes to "show" if it is true',
-                  )
                 },
               },
               {
@@ -322,10 +309,8 @@ export default function IsoformInspectorView() {
                 icon: self.showCanonicalExons
                   ? VisibilityOffIcon
                   : VisibilityIcon,
-                disabled: true,
                 onClick: () => {
                   self.toggleCanonicalExons()
-                  console.log('Hides the canonical exon bar if hidden')
                 },
               },
               {
@@ -370,12 +355,8 @@ export default function IsoformInspectorView() {
               },
               {
                 label: 'by subject id',
-                disabled: true,
                 onClick: () => {
-                  self.cluster = false
-                  console.log(
-                    'without further intervention sorts by the feature location, does nothing if already sorted by this',
-                  )
+                  self.runSortById()
                 },
               },
               {

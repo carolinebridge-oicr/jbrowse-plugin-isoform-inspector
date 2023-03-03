@@ -295,6 +295,7 @@ export async function fetchLocalData(
 export function getNivoHmData(
   dataState: string,
   showCols: boolean,
+  showRows: boolean,
   cluster: boolean,
   subjects: Array<Subject>,
 ) {
@@ -302,6 +303,7 @@ export function getNivoHmData(
     const { subject, features, data, clusterData } = getHeatmapData(
       subjects,
       showCols,
+      showRows,
       cluster,
     )
     return { subject, features, data, clusterData }
@@ -312,6 +314,7 @@ export function getNivoHmData(
 function getHeatmapData(
   subjects: Array<Subject>,
   showCols: boolean,
+  showRows: boolean,
   cluster: boolean,
 ) {
   let keys: Array<string> = []
@@ -347,10 +350,17 @@ function getHeatmapData(
   if (!showCols) {
     nivoData = filterNoDataColumns(nivoData)
   }
+  if (!showRows) {
+    nivoData = filterNoDataRows(nivoData)
+  }
   if (cluster) {
     const clusterResult = runClustering(nivoData)
     nivoData = clusterResult.nivoData
     clusterData = clusterResult.cluster
+  } else {
+    nivoData.sort((a: any, b: any) => {
+      return a.id.localeCompare(b.id)
+    })
   }
 
   return {
@@ -361,7 +371,7 @@ function getHeatmapData(
   }
 }
 
-export function filterNoDataColumns(data: any) {
+function filterNoDataColumns(data: any) {
   const hasValues = data.reduce(
     (r: any, a: any) => a.data.map((value: any, i: number) => r[i] || value.y),
     [],
@@ -373,6 +383,13 @@ export function filterNoDataColumns(data: any) {
     }
   })
 
+  return result
+}
+
+function filterNoDataRows(data: any) {
+  const result = data.filter(
+    (subject: any) => !subject.justReads.every((value: any) => value === 0),
+  )
   return result
 }
 
