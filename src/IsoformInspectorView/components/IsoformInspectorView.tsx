@@ -105,7 +105,7 @@ const Crosshair = observer(
     height: number
     gap: number
   }) => {
-    const yPos = model.uiState.currentY
+    let yPos = model.uiState.currentY
     let xPos
     if (model.uiState.currentPanel === 'annotations') {
       xPos = model.uiState.currentX
@@ -115,6 +115,9 @@ const Crosshair = observer(
       model.uiState.currentPanel === 'featureLabels'
     ) {
       xPos = model.uiState.currentX + width * 0.1 + gap
+    }
+    if (model.uiState.currentPanel === 'featureLabels') {
+      yPos = model.uiState.currentY + height
     }
     return (
       <svg width={width} height={height} y={model.top}>
@@ -205,61 +208,59 @@ const AnnotationLegend = observer(({ model }: { model: any }) => {
   )
 })
 
-const Labels = observer(
-  ({ model, width, height }: { model: any; width: number; height: number }) => {
-    if (!model.spliceJunctions) return null
-    let arr = Array.from(Object.values(model.spliceJunctions))
-    if (!model.showCols)
-      arr = arr.filter((obj: any) => {
-        if (obj.value > 0) return obj
-      })
-    const data = [
-      {
-        id: 'labels',
-        data: arr,
-      },
-    ]
-    return (
-      <svg width={width} height={20}>
-        <foreignObject x={0} y={0} width={width} height={20}>
-          <HeatMapCanvas
+const Labels = observer(({ model, width }: { model: any; width: number }) => {
+  if (!model.spliceJunctions) return null
+  let arr = Array.from(Object.values(model.spliceJunctions))
+  if (!model.showCols)
+    arr = arr.filter((obj: any) => {
+      if (obj.value > 0) return obj
+    })
+  const data = [
+    {
+      id: 'labels',
+      data: arr,
+    },
+  ]
+  return (
+    <svg width={width} height={20}>
+      <foreignObject x={0} y={0} width={width} height={20}>
+        <HeatMapCanvas
+          // @ts-ignore
+          data={data}
+          width={width}
+          height={20}
+          label={'data.label'}
+          colors={{
+            type: 'sequential',
+            scheme: 'blues',
+            minValue: 0,
+            maxValue: 5,
+          }}
+          tooltip={(value) => {
+            const { data, x, y } = value.cell
+            const feature = data.x
             // @ts-ignore
-            data={data}
-            width={width}
-            height={20}
-            label={'data.label'}
-            colors={{
-              type: 'sequential',
-              scheme: 'blues',
-              minValue: 0,
-              maxValue: 5,
-            }}
-            tooltip={(value) => {
-              const { data, x, y } = value.cell
-              const feature = data.x
-              // @ts-ignore
-              const status = data.status
-              // @ts-ignore
-              const score = data.value
-              model.setCurrentPanel('featureLabels')
-              model.setCurrentSubjectId(status)
-              model.setCurrentX(x)
-              model.setCurrentY(y)
-              model.setCurrentFeatureId(feature)
-              model.setCurrentScoreVal(score)
-              return <></>
-            }}
-            onClick={(value) => {
-              console.log(
-                'queue dialog that lets a user change the label and status of this splice junction cell',
-              )
-            }}
-          />
-        </foreignObject>
-      </svg>
-    )
-  },
-)
+            const status = data.status
+            // @ts-ignore
+            const score = data.value
+            model.setCurrentPanel('featureLabels')
+            model.setCurrentSubjectId(status)
+            model.setCurrentX(x)
+            model.setCurrentY(y)
+            model.setCurrentFeatureId(feature)
+            model.setCurrentScoreVal(score)
+            return <></>
+          }}
+          onClick={(value) => {
+            console.log(
+              'queue dialog that lets a user change the label and status of this splice junction cell',
+            )
+          }}
+        />
+      </foreignObject>
+    </svg>
+  )
+})
 
 const IsoformInspectorView = observer(({ model }: { model: any }) => {
   const height = model.height
@@ -298,12 +299,12 @@ const IsoformInspectorView = observer(({ model }: { model: any }) => {
             height={height}
             gap={gap}
           />
-          <Tooltip model={model} width={width + gap} height={height} />
+          <Tooltip model={model} width={width * 0.9 + gap} height={height} />
         </svg>
         <div style={{ display: 'flex' }}>
           <svg width={width * 0.1 + gap} height={500} />
           <div>
-            <Labels model={model} width={width * 0.8} height={height} />
+            <Labels model={model} width={width * 0.8} />
             <GeneModel model={model} width={width * 0.8} height={500} />
           </div>
         </div>
