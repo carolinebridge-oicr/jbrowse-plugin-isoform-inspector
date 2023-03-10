@@ -9,7 +9,8 @@ export interface Feature {
 
 export interface Subject {
   subject_id: string
-  features: Feature[]
+  junctions: Feature[]
+  exons: Feature[]
   annotation: any
 }
 
@@ -323,7 +324,7 @@ function getHeatmapData(
   subjects.forEach((subj, i) => {
     const nivoDataObj: Array<any> = []
     const justReads: Array<any> = []
-    subj.features.forEach((feature) => {
+    subj.junctions.forEach((feature) => {
       nivoDataObj.push({
         x: feature.feature_id,
         y: feature.value,

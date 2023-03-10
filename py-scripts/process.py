@@ -72,7 +72,7 @@ def parse_gff3(gff, gene_id):
     "start": g.start,
     "end": g.end,
     "strand": g.strand,
-    "collapsed_exons": {},
+    "exons": {},
     "junctions": {}
   }
 
@@ -82,6 +82,18 @@ def parse_gff3(gff, gene_id):
     end = f.end
     [status] = f.attributes['transcript_status'] # might be fragile
     gene['junctions'][f"{chr}:{start}-{end}"] = {
+      "status": status,
+      "chr": chr,
+      "start": start,
+      "end": end
+    }
+  
+  for f in gff_db.children(gene_id, featuretype='exon', order_by='start'):
+    chr = f.seqid.replace('chr', '')
+    start = f.start
+    end = f.end
+    [status] = f.attributes['transcript_status'] # might be fragile
+    gene['exons'][f"{chr}:{start}-{end}"] = {
       "status": status,
       "chr": chr,
       "start": start,
@@ -105,6 +117,7 @@ def output_anno(anno):
   return output
 
 def get_junction_count(samfile, chr, start, end):
+  # currently get_junction_count counts the reads for all canonical exons for the reference genome
   count = 0
   for seq in samfile.fetch(chr, start, end):
     ref_start = seq.reference_start + 1
@@ -115,9 +128,17 @@ def get_junction_count(samfile, chr, start, end):
           if ref_start == start and ref_end == end:
               count += 1
 
-      if op not in (2, 4, 5): # not increase for clipping or deletion from the reference
+      if op in (0, 2, 3): # increase the ref_start for match, deletion, or skipped reference
           ref_start += size
 
+  return count
+
+def get_exon_count(samfile, chr, start, end):
+  # TODO: might need to pass the count_cov operation through the json file to the front end
+  # this is an intensive operation that the BAM file is required for
+  # JBrowse2 core currently does it but it takes some load time
+  # samfile.count_coverage(chr, start, end)
+  count = samfile.count(chr, start, end)
   return count
 
 def get_ann_expression(adata, gene_id):
@@ -135,9 +156,9 @@ def extract_read_counts(f, annotations, gene):
   seq_filename = os.path.basename(f)
 
   if seq_filename not in annotations:
+    # if no annotations file is given subject ids are assigned a random integer
     subj_annotations = []
     subject_id = f'null-id-{rd.randint(0,100)}'
-    # raise Exception(f"No annotation provided for file: {seq_filename}")
   else:
     anno = annotations[seq_filename]
     subject_id = anno[sample_id_header] # figure out what this looks like for anndata
@@ -145,24 +166,40 @@ def extract_read_counts(f, annotations, gene):
     subj_annotations = output_anno(anno)
 
   value = []
+  junction_quant = []
+  junction_read_sum = 0
   if (f.lower().endswith('.bam')):
+    # counting junctions for alignment files
     samfile = pysam.AlignmentFile(f, "rb")
-    # gene reads spanning across junctions
-    # this may be optimized later, should ideally stream the reads once
-    junction_quant = []
+    # TODO: enhancement to use subject junctions instead of relying on canonical junctions
+    #  might be a useful enhancement to include and illustrate novel subject junctions and counts
+    #  pysam has a good function for this, just one call across the entire gene of interest
+    #  samfile.find_introns((read for read in samfile.fetch(chr, start, end))))
+    #  returns a list of introns with their read counts
     for junction in gene['junctions']:
+      # gene reads spanning across canonical junctions
       chr = gene['junctions'][junction]['chr']
       start = gene['junctions'][junction]['start']
       end = gene['junctions'][junction]['end']
+      value = get_junction_count(samfile, chr, start, end)
+      junction_read_sum += value
       junction_quant.append({
           "feature_id": junction,
-          "value": get_junction_count(samfile, chr, start, end), # this count is all it derives from ea file
+          "value": value,
           "status": gene['junctions'][junction]['status']
-          # this whole for loop basically:
-          # for each junction in the junctions derived from the gencode
-          # grab all that info, then create an object with the featureid and the value that coordinates with it
-          # the value that coordinates with it is one where the chromosome start and end coordinate with the junction
-          # i.e. use this provided BAM file, find the corresponding junction within it
+      })
+    exon_quant = []
+    exon_read_sum = 0
+    for exon in gene['exons']:
+      chr = gene['exons'][exon]['chr']
+      start = gene['exons'][exon]['start']
+      end = gene['exons'][exon]['end']
+      value = get_exon_count(samfile, chr, start, end)
+      exon_read_sum += value
+      exon_quant.append({
+        "feature_id": exon,
+        "value": value,
+        "status": gene['exons'][exon]['status']
       })
 
     samfile.close()
@@ -170,6 +207,8 @@ def extract_read_counts(f, annotations, gene):
     gene_id = gene['id']
     adata = sc.read(f)
     value = get_ann_expression(adata, gene_id)
+    # TODO: pysam has some normalization functionality for anndata files
+    read_sum += value
     adata.file.close()
 
     junction_quant.append({
@@ -177,9 +216,28 @@ def extract_read_counts(f, annotations, gene):
       "value": value,
     })
 
+  # normalization performed with RPKM
+  gene_length = gene['end'] - gene['start']
+  scale_factor = junction_read_sum / 1000000
+  revised_junction_quant = []
+  for junction in junction_quant:
+    rpkm = (junction['value'] / scale_factor) / gene_length
+    revised_junction_quant.append({
+      **junction,
+      "rpkm": rpkm,
+    })
+  revised_exon_quant = []
+  for exon in exon_quant:
+    rpkm = (exon['value'] / scale_factor) / gene_length
+    revised_exon_quant.append({
+      **exon,
+      "rpkm": rpkm,
+    })
+
   subject = {
     "subject_id": subject_id,
-    "features": junction_quant,
+    "junctions": revised_junction_quant,
+    "exons": revised_exon_quant,
     "annotations": subj_annotations
   }
 
@@ -188,12 +246,9 @@ def extract_read_counts(f, annotations, gene):
 def main(score_client, manifest, seq_file_output_dir, gff, annotation_files, output_dir, gene_id):
   # TODO: host gff files for common assemblies on aws and fetch them instead of requiring the user to do so
 
-  # TODO: create compatibility step for "exon" counts
-
   # TODO: complete compatibility step for AnnData files
 
   # define some process variables, allows extensibility in the future
-  feature_type = "junction_quantifications"
   subject_type = "sample"
 
   print('Operation 1/3: Parsing annotations file...', flush=True)
@@ -257,7 +312,6 @@ def main(score_client, manifest, seq_file_output_dir, gff, annotation_files, out
   output = {
     "gene_id": gene_id,
     "subject_type": subject_type,
-    "feature_type": feature_type,
     "observation_type": "read_counts",
     "subjects": subjects_arr
   }

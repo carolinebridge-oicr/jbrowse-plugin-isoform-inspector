@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite'
 import { measureText } from '@jbrowse/core/util'
 import { Line } from '@visx/shape'
 import { HeatMapCanvas } from '@nivo/heatmap'
+import { ToggleButtonGroup, ToggleButton, Tooltip } from '@mui/material'
 import Heatmap from './heatmap'
 import GeneModel from './geneModel'
 import SubjectAnnotations from './SubjectAnnotations'
@@ -10,7 +11,7 @@ import Dendrogram from './dendrogram'
 
 export const accentColorDark = '#005AB5' // TODO: colour of the crosshair to be freely selectable
 
-const Tooltip = observer(
+const HeatmapTooltip = observer(
   ({ model, width, height }: { model: any; width: number; height: number }) => {
     const rectHeight = 60
     let xPos
@@ -262,6 +263,32 @@ const Labels = observer(({ model, width }: { model: any; width: number }) => {
   )
 })
 
+const ModeToggle = observer(({ model }: { model: any }) => {
+  const [alignment, setAlignment] = React.useState('junction')
+
+  return (
+    <Tooltip title="Toggle the visualization mode">
+      <ToggleButtonGroup
+        style={{ alignSelf: 'end' }}
+        value={alignment}
+        exclusive
+        onChange={(
+          event: React.MouseEvent<HTMLElement>,
+          newAlignment: string,
+        ) => {
+          setAlignment(newAlignment)
+        }}
+        aria-label="mode"
+      >
+        <ToggleButton value="junction">
+          Splice junction read counts
+        </ToggleButton>
+        <ToggleButton value="exon">Canonical exon read counts</ToggleButton>
+      </ToggleButtonGroup>
+    </Tooltip>
+  )
+})
+
 const IsoformInspectorView = observer(({ model }: { model: any }) => {
   const height = model.height
   const width = model.width
@@ -270,6 +297,8 @@ const IsoformInspectorView = observer(({ model }: { model: any }) => {
   if (model.geneId) {
     model.loadGeneData(model.geneId)
   }
+
+  console.log(model)
 
   return (
     <div
@@ -282,6 +311,7 @@ const IsoformInspectorView = observer(({ model }: { model: any }) => {
     >
       <AnnotationLegend model={model} />
       <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <ModeToggle model={model} />
         <svg width={width * 0.9 + gap} height={height}>
           <svg width={width * 0.1} height={height}>
             <SubjectAnnotations
@@ -299,7 +329,11 @@ const IsoformInspectorView = observer(({ model }: { model: any }) => {
             height={height}
             gap={gap}
           />
-          <Tooltip model={model} width={width * 0.9 + gap} height={height} />
+          <HeatmapTooltip
+            model={model}
+            width={width * 0.9 + gap}
+            height={height}
+          />
         </svg>
         <div style={{ display: 'flex' }}>
           <svg width={width * 0.1 + gap} height={500} />
