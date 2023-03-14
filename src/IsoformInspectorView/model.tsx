@@ -1,13 +1,25 @@
 import { MenuItem } from '@jbrowse/core/ui'
 import { ElementId } from '@jbrowse/core/util/types/mst'
+import { getSession } from '@jbrowse/core/util'
 import { types, Instance, flow } from 'mobx-state-tree'
+
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
 import SpeakerNotesIcon from '@mui/icons-material/SpeakerNotes'
 import HighlightIcon from '@mui/icons-material/Highlight'
-import { getSession } from '@jbrowse/core/util'
+import SortIcon from '@mui/icons-material/Sort'
+import ToggleOffIcon from '@mui/icons-material/ToggleOff'
+import ToggleOnIcon from '@mui/icons-material/ToggleOn'
+import GridOnIcon from '@mui/icons-material/GridOn'
+import ViewCarouselIcon from '@mui/icons-material/ViewCarousel'
+import FilterAltIcon from '@mui/icons-material/FilterAlt'
 
-import { fetchLocalData, getNivoHmData, mapSpliceJunctions } from './FetchData'
+import {
+  fetchLocalData,
+  getNivoHmData,
+  mapSpliceJunctions,
+  mapExons,
+} from './FetchData'
 import ToggleAnnotationsDialog from './components/ToggleAnnotationsDialog'
 
 // colour-blind friendly palette retrieved from https://www.nature.com/articles/nmeth.1618
@@ -54,6 +66,7 @@ export default function IsoformInspectorView() {
       cluster: false,
       showCanonicalExons: true,
       showCovPlot: true,
+      mode: 'junction',
     })
     .volatile(() => ({
       data: undefined as unknown as any,
@@ -63,6 +76,7 @@ export default function IsoformInspectorView() {
       geneModelData: undefined as unknown as any,
       canonicalExons: undefined as unknown as any,
       spliceJunctions: undefined as unknown as any,
+      subjectExons: undefined as unknown as any,
       error: undefined as unknown as any,
       currentSubjectId: undefined as unknown as any,
       currentFeatureId: undefined as unknown as any,
@@ -98,6 +112,9 @@ export default function IsoformInspectorView() {
       setTop(top: number) {
         self.top = top
       },
+      setMode(mode: string) {
+        self.mode = mode
+      },
       setNivoAnnotations(annotsToHide: Array<{}>) {
         let revisedAnnots: Array<{}> = []
         let revisedData: Array<{}> = []
@@ -119,7 +136,12 @@ export default function IsoformInspectorView() {
           }
         })
 
-        self.nivoData.data.forEach((subject: any) => {
+        const set =
+          self.mode === 'junction'
+            ? self.nivoData.junctions.data
+            : self.nivoData.exons.data
+
+        set.forEach((subject: any) => {
           subject.annotation.data.forEach((annotField: any) => {
             // @ts-ignore
             if (revisedConfig[annotField.x]?.show) {
@@ -143,7 +165,10 @@ export default function IsoformInspectorView() {
           self.cluster,
           self.data.subjects,
         )
-        self.clusterData = self.nivoData.clusterData
+        self.clusterData =
+          self.mode === 'junction'
+            ? self.nivoData.junctions.clusterData
+            : self.nivoData.exons.clusterData
       },
       setOnLoadProperties(data: any) {
         this.setSubjects(data.subjects)
@@ -154,9 +179,10 @@ export default function IsoformInspectorView() {
         self.canonicalExons = data.canonicalExons
         self.geneModelData = data.geneModelData
         self.spliceJunctions = mapSpliceJunctions(
-          self.nivoData.data,
+          self.nivoData.junctions.data,
           self.geneModelData,
         )
+        self.subjectExons = mapExons(self.nivoData.exons.data)
         if (Object.keys(self.annotationsConfig).length === 0)
           self.annotationsConfig = data.annotationsConfig
         this.setNivoAnnotations([])
@@ -270,6 +296,7 @@ export default function IsoformInspectorView() {
         const menuItems: MenuItem[] = [
           {
             label: 'Heatmap...',
+            icon: GridOnIcon,
             subMenu: [
               {
                 label: `${self.showRows ? 'Hide' : 'Show'} rows with no reads`,
@@ -301,6 +328,7 @@ export default function IsoformInspectorView() {
           },
           {
             label: 'Gene model...',
+            icon: ViewCarouselIcon,
             subMenu: [
               {
                 label: `${
@@ -336,16 +364,18 @@ export default function IsoformInspectorView() {
             },
           },
           {
-            label: 'Toggle junction mode',
-            disabled: true,
+            label: `Toggle to ${
+              self.mode === 'junction' ? 'exon' : 'junction'
+            } mode`,
+            icon: self.mode === 'junction' ? ToggleOffIcon : ToggleOnIcon,
             onClick: () => {
-              console.log(
-                'TBD the wording and placement of this, but basically just toggles between junction and exon features',
-              )
+              const newMode = self.mode === 'junction' ? 'exon' : 'junction'
+              self.setMode(newMode)
             },
           },
           {
             label: 'Sort...',
+            icon: SortIcon,
             subMenu: [
               {
                 label: 'by clustering',
@@ -373,6 +403,7 @@ export default function IsoformInspectorView() {
           },
           {
             label: 'Filter by annotation',
+            icon: FilterAltIcon,
             disabled: true,
             onClick: () => {
               console.log(

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { observer } from 'mobx-react-lite'
 import { measureText } from '@jbrowse/core/util'
 import { Line } from '@visx/shape'
@@ -210,8 +210,11 @@ const AnnotationLegend = observer(({ model }: { model: any }) => {
 })
 
 const Labels = observer(({ model, width }: { model: any; width: number }) => {
-  if (!model.spliceJunctions) return null
-  let arr = Array.from(Object.values(model.spliceJunctions))
+  if (model.mode === 'junction' && !model.spliceJunctions) return null
+  if (model.mode === 'exon' && !model.subjectExons) return null
+  const targetData =
+    model.mode === 'junction' ? model.spliceJunctions : model.subjectExons
+  let arr = Array.from(Object.values(targetData))
   if (!model.showCols)
     arr = arr.filter((obj: any) => {
       if (obj.value > 0) return obj
@@ -264,26 +267,34 @@ const Labels = observer(({ model, width }: { model: any; width: number }) => {
 })
 
 const ModeToggle = observer(({ model }: { model: any }) => {
-  const [alignment, setAlignment] = React.useState('junction')
+  const [mode, setMode] = React.useState(model.mode)
+
+  useEffect(() => {
+    setMode(model.mode)
+  }, [model.mode])
 
   return (
-    <Tooltip title="Toggle the visualization mode">
+    <Tooltip title="Toggle the visualization modes">
       <ToggleButtonGroup
         style={{ alignSelf: 'end' }}
-        value={alignment}
+        value={mode}
+        color="secondary"
         exclusive
-        onChange={(
-          event: React.MouseEvent<HTMLElement>,
-          newAlignment: string,
-        ) => {
-          setAlignment(newAlignment)
+        onChange={(event: React.MouseEvent<HTMLElement>, newMode: string) => {
+          if (newMode !== null) {
+            setMode(newMode)
+            model.setMode(newMode)
+            model.getAndSetNivoData()
+          }
         }}
         aria-label="mode"
       >
         <ToggleButton value="junction">
-          Splice junction read counts
+          {mode === 'junction' ? 'Splice junction read counts' : '...'}
         </ToggleButton>
-        <ToggleButton value="exon">Canonical exon read counts</ToggleButton>
+        <ToggleButton value="exon">
+          {mode === 'exon' ? 'Canonical exon read counts' : '...'}
+        </ToggleButton>
       </ToggleButtonGroup>
     </Tooltip>
   )
@@ -297,8 +308,6 @@ const IsoformInspectorView = observer(({ model }: { model: any }) => {
   if (model.geneId) {
     model.loadGeneData(model.geneId)
   }
-
-  console.log(model)
 
   return (
     <div

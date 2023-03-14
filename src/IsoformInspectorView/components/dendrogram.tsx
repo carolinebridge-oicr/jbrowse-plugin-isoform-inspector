@@ -15,14 +15,16 @@ export const Dendrogram = ({
     return null
   }
 
+  const offset = 35
+
   const clust = cluster()
     .size([height - model.top, width])
     .separation(() => 1)
   const root = hierarchy(model.clusterData.clusters)
   clust(root)
   return (
-    <svg id="dendro" width={width} height={height}>
-      <g transform={`translate(0,${model.top})`}>
+    <svg id="dendro" width={width} height={height + offset}>
+      <g transform={`translate(0,${model.top + offset})`}>
         {root
           .links()
           .map(({ source, target }: { source: any; target: any }) => {

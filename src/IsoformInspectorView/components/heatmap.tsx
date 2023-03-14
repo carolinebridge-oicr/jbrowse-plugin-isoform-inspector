@@ -15,8 +15,13 @@ export const Heatmap = ({
     return null
   }
 
+  const data =
+    model.mode === 'junction'
+      ? model.nivoData.junctions.data
+      : model.nivoData.exons.data
+
   const maxVal = Math.max(
-    ...model.nivoData.data.map((object: any) =>
+    ...data.map((object: any) =>
       Math.max(...object.data.map((item: any) => item.y)),
     ),
   )
@@ -25,7 +30,7 @@ export const Heatmap = ({
     <svg width={width} height={height}>
       <foreignObject x={0} y={0} width={width} height={height}>
         <HeatMapCanvas
-          data={model.nivoData.data}
+          data={data}
           width={width}
           height={height}
           axisBottom={null}

@@ -66,8 +66,18 @@ export const GeneModel = ({
                     height={10}
                     x={exon.drawnExonX}
                     y={canonicalHeight}
-                    stroke={'black'}
-                    fill={'white'}
+                    stroke={
+                      model.currentFeatureId?.includes(exon.start + 1) &&
+                      model.currentFeatureId?.includes(exon.end)
+                        ? 'red'
+                        : 'black'
+                    }
+                    fill={
+                      model.currentFeatureId?.includes(exon.start + 1) &&
+                      model.currentFeatureId?.includes(exon.end)
+                        ? 'red'
+                        : 'white'
+                    }
                   />
                 )
               })}
@@ -163,11 +173,13 @@ export const GeneModel = ({
                     x={exon.drawnExonX}
                     y={30 * (index + 5) - 5}
                     stroke={
+                      model.currentFeatureId?.includes(exon.start + 1) &&
                       model.currentFeatureId?.includes(exon.end)
                         ? 'red'
                         : 'black'
                     }
                     fill={
+                      model.currentFeatureId?.includes(exon.start + 1) &&
                       model.currentFeatureId?.includes(exon.end)
                         ? 'red'
                         : 'white'

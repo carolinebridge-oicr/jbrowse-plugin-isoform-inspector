@@ -68,6 +68,7 @@ def parse_gff3(gff, gene_id):
 
   gene = {
     "id": g.id,
+    "name": g.attributes['gene_name'][0],
     "chr": g.seqid.replace('chr', ''),
     "start": g.start,
     "end": g.end,
@@ -258,7 +259,6 @@ def main(score_client, manifest, seq_file_output_dir, gff, annotation_files, out
   print('Operation 2/3: Parsing gff3 file...', flush=True)
   # parse gff
   gene = parse_gff3(gff, gene_id)
-
   subjects_arr = []
 
   if (score_client):
@@ -311,6 +311,7 @@ def main(score_client, manifest, seq_file_output_dir, gff, annotation_files, out
   # whether bulk downloading or static, output is generated here
   output = {
     "gene_id": gene_id,
+    "gene_name": gene['name'],
     "subject_type": subject_type,
     "observation_type": "read_counts",
     "subjects": subjects_arr

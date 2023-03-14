@@ -301,13 +301,13 @@ export function getNivoHmData(
   subjects: Array<Subject>,
 ) {
   if (dataState === 'done') {
-    const { subject, features, data, clusterData } = getHeatmapData(
+    const { subject, junctions, exons } = getHeatmapData(
       subjects,
       showCols,
       showRows,
       cluster,
     )
-    return { subject, features, data, clusterData }
+    return { subject, junctions, exons }
   }
   return
 }
@@ -318,57 +318,87 @@ function getHeatmapData(
   showRows: boolean,
   cluster: boolean,
 ) {
-  let keys: Array<string> = []
-  let nivoData: any[] = []
+  let junctionData: any[] = []
+  let exonData: any[] = []
 
   subjects.forEach((subj, i) => {
-    const nivoDataObj: Array<any> = []
+    const junctionDataObj: Array<any> = []
     const justReads: Array<any> = []
     subj.junctions.forEach((feature) => {
-      nivoDataObj.push({
+      junctionDataObj.push({
         x: feature.feature_id,
         y: feature.value,
         status: feature.status ? feature.status : '',
       })
       justReads.push(feature.value)
     })
-    nivoData.push({
+    junctionData.push({
       id: subj.subject_id,
-      data: nivoDataObj,
+      data: junctionDataObj,
+      justReads,
+      annotation: subj.annotation,
+    })
+
+    const exonDataObj: Array<any> = []
+    subj.exons.forEach((feature) => {
+      exonDataObj.push({
+        x: feature.feature_id,
+        y: feature.value,
+        status: feature.status ? feature.status : '',
+      })
+      justReads.push(feature.value)
+    })
+    exonData.push({
+      id: subj.subject_id,
+      data: exonDataObj,
       justReads,
       annotation: subj.annotation,
     })
   })
 
   // filter out duplicate id's for now
-  nivoData = nivoData.filter(
+  junctionData = junctionData.filter(
     (target: any, index: any, array: any) =>
       array.findIndex((t: any) => t.id === target.id) === index,
   )
 
-  let clusterData = {}
+  let junctionClusterData = {}
+  let exonClusterData = {}
 
   if (!showCols) {
-    nivoData = filterNoDataColumns(nivoData)
+    junctionData = filterNoDataColumns(junctionData)
+    exonData = filterNoDataColumns(exonData)
   }
   if (!showRows) {
-    nivoData = filterNoDataRows(nivoData)
+    junctionData = filterNoDataRows(junctionData)
+    exonData = filterNoDataRows(exonData)
   }
   if (cluster) {
-    const clusterResult = runClustering(nivoData)
-    nivoData = clusterResult.nivoData
-    clusterData = clusterResult.cluster
+    const junctionClusterResult = runClustering(junctionData)
+    junctionData = junctionClusterResult.nivoData
+    junctionClusterData = junctionClusterResult.cluster
+    const exonClusterResult = runClustering(exonData)
+    exonData = exonClusterResult.nivoData
+    exonClusterData = exonClusterResult.cluster
   } else {
-    nivoData.sort((a: any, b: any) => {
+    junctionData.sort((a: any, b: any) => {
+      return a.id.localeCompare(b.id)
+    })
+    exonData.sort((a: any, b: any) => {
       return a.id.localeCompare(b.id)
     })
   }
 
   return {
     subject: 'sample',
-    features: keys,
-    data: nivoData,
-    clusterData: clusterData,
+    junctions: {
+      data: junctionData,
+      clusterData: junctionClusterData,
+    },
+    exons: {
+      data: exonData,
+      clusterData: exonClusterData,
+    },
   }
 }
 
@@ -453,4 +483,30 @@ export function mapSpliceJunctions(spliceJunctions: any, geneModelData: any) {
   })
 
   return mappedJunctions
+}
+
+export function mapExons(data: any) {
+  const mappedExons = {}
+  data.forEach((subject: any) => {
+    subject.data.forEach((exon: any, i: number) => {
+      // @ts-ignore
+      const prevValue = mappedExons[exon.x]?.value
+        ? // @ts-ignore
+          mappedExons[exon.x]?.value
+        : 0
+      const statusVal =
+        exon.status === 'NOVEL' ? 2 : exon.status === 'PUTATIVE' ? 1 : 0
+      // @ts-ignore
+      mappedExons[exon.x] = {
+        x: exon.x,
+        y: statusVal,
+        label: `E${i + 1}`,
+        status: `${exon.status} Exon ${i + 1}`,
+        feature_id: exon.x,
+        value: prevValue + exon.y,
+      }
+    })
+  })
+
+  return mappedExons
 }
