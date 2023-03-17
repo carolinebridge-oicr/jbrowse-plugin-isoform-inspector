@@ -67,6 +67,33 @@ export default class IsoformInspectorPlugin extends Plugin {
                             view.setGeneModel(feature.data)
                             // @ts-ignore
                             view.setOnLoadProperties(data)
+
+                            // @ts-ignore
+                            const annots = view.getAnnotationsConfig()
+                            const annotsToHide = [{}]
+                            Object.entries(annots).forEach(([key, value]) => {
+                              // Hide annotation if there is only one annotation value and it is empty
+                              // Hide annotation if number of subjects === number of annotation possibility
+                              // Hide annotation if number of annotation possibilities exceeds nmetPalette.length
+                              const checkLen = Object.entries(
+                                // @ts-ignore
+                                value.fields,
+                              ).length
+                              if (
+                                // @ts-ignore
+                                checkLen <= 1 ||
+                                // @ts-ignore
+                                checkLen ===
+                                  // @ts-ignore
+                                  view.getSubjectIds().length ||
+                                // @ts-ignore
+                                checkLen > nmetPalette.length
+                              ) {
+                                annotsToHide.push({ field: key, show: false })
+                              }
+                            })
+                            // @ts-ignore
+                            view.setNivoAnnotations(annotsToHide)
                           }
                         } catch (error) {
                           session.notify(

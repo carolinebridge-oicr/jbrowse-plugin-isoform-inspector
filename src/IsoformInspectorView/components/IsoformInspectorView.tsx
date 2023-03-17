@@ -290,10 +290,14 @@ const ModeToggle = observer(({ model }: { model: any }) => {
         aria-label="mode"
       >
         <ToggleButton value="junction">
-          {mode === 'junction' ? 'Splice junction read counts' : '...'}
+          {mode === 'junction'
+            ? `Splice junction read counts (${model.readType})`
+            : '...'}
         </ToggleButton>
         <ToggleButton value="exon">
-          {mode === 'exon' ? 'Canonical exon read counts' : '...'}
+          {mode === 'exon'
+            ? `Canonical exon read counts (${model.readType})`
+            : '...'}
         </ToggleButton>
       </ToggleButtonGroup>
     </Tooltip>
@@ -315,6 +319,7 @@ const IsoformInspectorView = observer(({ model }: { model: any }) => {
         padding: '5px',
         display: 'flex',
         justifyContent: 'center',
+        overflow: 'scroll',
         gap: gap,
       }}
     >

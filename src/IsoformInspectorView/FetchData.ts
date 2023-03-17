@@ -5,6 +5,7 @@ export interface Feature {
   feature_id: string
   value: number
   status: string
+  rpkm: number
 }
 
 export interface Subject {
@@ -215,6 +216,9 @@ export async function fetchLocalData(
       const target = annotations.find((annotation: any) => {
         return annotation.type === annotField
       })
+      if (target.value === '') {
+        target.value = 'N/A'
+      }
       // @ts-ignore
       if (!annotationsConfig[annotField]) {
         annotationsConfig = {
@@ -299,6 +303,7 @@ export function getNivoHmData(
   showRows: boolean,
   cluster: boolean,
   subjects: Array<Subject>,
+  readType: string,
 ) {
   if (dataState === 'done') {
     const { subject, junctions, exons } = getHeatmapData(
@@ -306,6 +311,7 @@ export function getNivoHmData(
       showCols,
       showRows,
       cluster,
+      readType,
     )
     return { subject, junctions, exons }
   }
@@ -317,6 +323,7 @@ function getHeatmapData(
   showCols: boolean,
   showRows: boolean,
   cluster: boolean,
+  readType: string,
 ) {
   let junctionData: any[] = []
   let exonData: any[] = []
@@ -327,10 +334,17 @@ function getHeatmapData(
     subj.junctions.forEach((feature) => {
       junctionDataObj.push({
         x: feature.feature_id,
-        y: feature.value,
+        y:
+          readType === 'raw'
+            ? feature.value
+            : parseFloat(feature.rpkm.toFixed(2)),
         status: feature.status ? feature.status : '',
       })
-      justReads.push(feature.value)
+      justReads.push(
+        readType === 'raw'
+          ? feature.value
+          : parseFloat(feature.rpkm.toFixed(2)),
+      )
     })
     junctionData.push({
       id: subj.subject_id,
@@ -343,10 +357,17 @@ function getHeatmapData(
     subj.exons.forEach((feature) => {
       exonDataObj.push({
         x: feature.feature_id,
-        y: feature.value,
+        y:
+          readType === 'raw'
+            ? feature.value
+            : parseFloat(feature.rpkm.toFixed(2)),
         status: feature.status ? feature.status : '',
       })
-      justReads.push(feature.value)
+      justReads.push(
+        readType === 'raw'
+          ? feature.value
+          : parseFloat(feature.rpkm.toFixed(2)),
+      )
     })
     exonData.push({
       id: subj.subject_id,
@@ -426,9 +447,7 @@ function filterNoDataRows(data: any) {
 
 function runClustering(data: any) {
   const cluster = clusterData({ data, key: 'justReads' })
-  // console.log(cluster)
   const result = cluster.order.map((i: number) => data[i])
-  // console.log(result)
   return { cluster, nivoData: result }
 }
 

@@ -67,6 +67,7 @@ export default function IsoformInspectorView() {
       showCanonicalExons: true,
       showCovPlot: true,
       mode: 'junction',
+      readType: 'raw',
     })
     .volatile(() => ({
       data: undefined as unknown as any,
@@ -114,6 +115,16 @@ export default function IsoformInspectorView() {
       },
       setMode(mode: string) {
         self.mode = mode
+      },
+      setReadType(mode: string) {
+        self.readType = mode
+        this.setOnLoadProperties(self.data)
+      },
+      getAnnotationsConfig() {
+        return self.annotationsConfig
+      },
+      getSubjectIds() {
+        return self.subjectIds
       },
       setNivoAnnotations(annotsToHide: Array<{}>) {
         let revisedAnnots: Array<{}> = []
@@ -164,6 +175,7 @@ export default function IsoformInspectorView() {
           self.showRows,
           self.cluster,
           self.data.subjects,
+          self.readType,
         )
         self.clusterData =
           self.mode === 'junction'
@@ -349,9 +361,6 @@ export default function IsoformInspectorView() {
                 disabled: true,
                 onClick: () => {
                   self.toggleCoveragePlot()
-                  console.log(
-                    'Shows or hides the exon coverage plot below the canonical exon, this option should be disabled if canonical exons are disabled',
-                  )
                 },
               },
             ],
@@ -371,6 +380,16 @@ export default function IsoformInspectorView() {
             onClick: () => {
               const newMode = self.mode === 'junction' ? 'exon' : 'junction'
               self.setMode(newMode)
+            },
+          },
+          {
+            label: `Toggle to ${
+              self.readType === 'raw' ? 'normalized' : 'raw'
+            } reads`,
+            icon: self.readType === 'raw' ? ToggleOffIcon : ToggleOnIcon,
+            onClick: () => {
+              const newMode = self.readType === 'raw' ? 'normalized' : 'raw'
+              self.setReadType(newMode)
             },
           },
           {

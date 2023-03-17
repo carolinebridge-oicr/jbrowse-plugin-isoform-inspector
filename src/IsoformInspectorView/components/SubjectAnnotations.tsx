@@ -12,17 +12,17 @@ export const SubjectAnnotation = ({
   width: number
   height: number
 }) => {
-  if (model.dataState !== 'done' || !model.geneId) {
+  if (model.dataState !== 'done' || !model.geneId || !model.nivoAnnotations) {
     return null
   }
 
-  const longest = model.nivoAnnotations[0].data.reduce((a: any, b: any) =>
-    a.x.length > b.x.length ? a : b,
-  )
-
-  const top = measureText(longest.x, 14)
-
-  if (model.top < top) model.setTop(top)
+  if (model.nivoAnnotations[0].data.length > 0) {
+    const longest = model.nivoAnnotations[0].data.reduce((a: any, b: any) =>
+      a.x.length > b.x.length ? a : b,
+    )
+    const top = measureText(longest.x, 14)
+    if (model.top < top) model.setTop(top)
+  }
 
   return (
     <svg width={width} height={height}>
