@@ -23,7 +23,11 @@ export const Dendrogram = ({
   const root = hierarchy(model.clusterData.clusters)
   clust(root)
   return (
-    <div>
+    <div
+      onMouseEnter={(e) => {
+        model.setCurrentPanel('none')
+      }}
+    >
       <svg id="dendro" width={width} height={height + offset}>
         <g transform={`translate(0,${model.top + offset})`}>
           {root

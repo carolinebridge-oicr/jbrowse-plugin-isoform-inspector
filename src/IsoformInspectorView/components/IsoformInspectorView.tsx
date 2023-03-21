@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite'
 import { measureText } from '@jbrowse/core/util'
 import { Line } from '@visx/shape'
 import { HeatMapCanvas } from '@nivo/heatmap'
-import { ToggleButtonGroup, ToggleButton, Tooltip } from '@mui/material'
+import { ToggleButtonGroup, ToggleButton } from '@mui/material'
 import Heatmap from './heatmap'
 import GeneModel from './geneModel'
 import SubjectAnnotations from './SubjectAnnotations'
@@ -13,6 +13,15 @@ export const accentColorDark = '#005AB5' // TODO: colour of the crosshair to be 
 
 const HeatmapTooltip = observer(
   ({ model, width, height }: { model: any; width: number; height: number }) => {
+    if (
+      (model.uiState.currentPanel === 'geneModelJunction' &&
+        model.mode !== 'junction') ||
+      (model.uiState.currentPanel === 'geneModelExon' &&
+        model.mode !== 'exon') ||
+      model.uiState.currentPanel === 'none'
+    ) {
+      return null
+    }
     const rectHeight = 60
     let xPos
     let yPos
@@ -39,7 +48,11 @@ const HeatmapTooltip = observer(
       yPos = model.uiState.currentY + model.top + 10
     }
 
-    if (model.uiState.currentPanel === 'featureLabels') {
+    if (
+      model.uiState.currentPanel === 'featureLabels' ||
+      model.uiState.currentPanel === 'geneModelJunction' ||
+      model.uiState.currentPanel === 'geneModelExon'
+    ) {
       tooltipLineA = `Label: ${model.currentSubjectId}` // e.g. KNOWN Junction 1
       tooltipLineB = `Feature: ${model.currentFeatureId}`
       tooltipLineC = `Total read count: ${model.currentScoreVal}` // sum of the scores for that feature
@@ -106,6 +119,16 @@ const Crosshair = observer(
     height: number
     gap: number
   }) => {
+    if (
+      (model.uiState.currentPanel === 'geneModelJunction' &&
+        model.mode !== 'junction') ||
+      (model.uiState.currentPanel === 'geneModelExon' &&
+        model.mode !== 'exon') ||
+      model.uiState.currentPanel === 'none'
+    ) {
+      return null
+    }
+
     let yPos = model.uiState.currentY
     let xPos
     if (model.uiState.currentPanel === 'annotations') {
@@ -113,13 +136,16 @@ const Crosshair = observer(
     }
     if (
       model.uiState.currentPanel === 'heatmap' ||
-      model.uiState.currentPanel === 'featureLabels'
+      model.uiState.currentPanel === 'featureLabels' ||
+      model.uiState.currentPanel === 'geneModelJunction' ||
+      model.uiState.currentPanel === 'geneModelExon'
     ) {
       xPos = model.uiState.currentX + width * 0.1 + gap
     }
     if (model.uiState.currentPanel === 'featureLabels') {
       yPos = model.uiState.currentY + height
     }
+
     return (
       <svg width={width} height={height} y={model.top}>
         {yPos <= height ? (
@@ -167,6 +193,9 @@ const AnnotationLegend = observer(({ model }: { model: any }) => {
         paddingLeft: 5,
         paddingTop: 5,
         gap: 5,
+      }}
+      onMouseEnter={(e) => {
+        model.setCurrentPanel('none')
       }}
     >
       {Object.keys(model.annotationsConfig).map((key) => {
@@ -274,33 +303,31 @@ const ModeToggle = observer(({ model }: { model: any }) => {
   }, [model.mode])
 
   return (
-    <Tooltip title="Toggle the visualization modes">
-      <ToggleButtonGroup
-        style={{ alignSelf: 'end' }}
-        value={mode}
-        color="secondary"
-        exclusive
-        onChange={(event: React.MouseEvent<HTMLElement>, newMode: string) => {
-          if (newMode !== null) {
-            setMode(newMode)
-            model.setMode(newMode)
-            model.getAndSetNivoData()
-          }
-        }}
-        aria-label="mode"
-      >
-        <ToggleButton value="junction">
-          {mode === 'junction'
-            ? `Splice junction read counts (${model.readType})`
-            : '...'}
-        </ToggleButton>
-        <ToggleButton value="exon">
-          {mode === 'exon'
-            ? `Canonical exon read counts (${model.readType})`
-            : '...'}
-        </ToggleButton>
-      </ToggleButtonGroup>
-    </Tooltip>
+    <ToggleButtonGroup
+      style={{ alignSelf: 'end' }}
+      value={mode}
+      color="secondary"
+      exclusive
+      onChange={(event: React.MouseEvent<HTMLElement>, newMode: string) => {
+        if (newMode !== null) {
+          setMode(newMode)
+          model.setMode(newMode)
+          model.getAndSetNivoData()
+        }
+      }}
+      aria-label="mode"
+    >
+      <ToggleButton value="junction">
+        {mode === 'junction'
+          ? `Splice junction read counts (${model.readType})`
+          : '...'}
+      </ToggleButton>
+      <ToggleButton value="exon">
+        {mode === 'exon'
+          ? `Canonical exon read counts (${model.readType})`
+          : '...'}
+      </ToggleButton>
+    </ToggleButtonGroup>
   )
 })
 
@@ -350,7 +377,13 @@ const IsoformInspectorView = observer(({ model }: { model: any }) => {
           />
         </svg>
         <div style={{ display: 'flex' }}>
-          <svg width={width * 0.1 + gap} height={500} />
+          <svg
+            width={width * 0.1 + gap}
+            height={500}
+            onMouseEnter={(e) => {
+              model.setCurrentPanel('none')
+            }}
+          />
           <div>
             <Labels model={model} width={width * 0.8} />
             <GeneModel model={model} width={width * 0.8} height={500} />

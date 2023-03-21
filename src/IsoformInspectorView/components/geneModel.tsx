@@ -40,7 +40,12 @@ export const GeneModel = ({
     model.geneModelData?.transcripts[0].strand == -1 ? true : false
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', paddingTop: 5 }}>
+    <div
+      style={{ display: 'flex', flexDirection: 'column', paddingTop: 5 }}
+      onMouseEnter={(e) => {
+        model.setCurrentPanel('none')
+      }}
+    >
       <div style={{ display: 'flex', alignItems: 'center', gap: '5' }}>
         <Tooltip title="Gene direction">
           {isBackward ? (
@@ -78,6 +83,36 @@ export const GeneModel = ({
                         ? 'red'
                         : 'white'
                     }
+                    onMouseEnter={(e) => {
+                      const found = Object.values(model.subjectExons).find(
+                        (value) => {
+                          // @ts-ignore
+                          return value.x.includes(exon.end)
+                        },
+                      )
+                      if (found) {
+                        // @ts-ignore
+                        const subjExon = model.subjectExons[found.x]
+                        const sizeOfEach =
+                          (model.width * 0.8) /
+                          Object.values(model.subjectExons).length
+                        const index = Object.values(
+                          model.subjectExons,
+                          // @ts-ignore
+                        ).findIndex((value) => value.x === found.x)
+                        const x = sizeOfEach / 2 + index * sizeOfEach
+                        model.setCurrentPanel('geneModelExon')
+                        model.setCurrentX(x)
+                        model.setCurrentY(10)
+                        model.setCurrentSubjectId(subjExon.status)
+                        model.setCurrentFeatureId(subjExon.feature_id)
+                        model.setCurrentScoreVal(subjExon.value)
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      model.setCurrentPanel('none')
+                      model.setCurrentFeatureId(null)
+                    }}
                   />
                 )
               })}
@@ -122,7 +157,22 @@ export const GeneModel = ({
                         }
                         strokeWidth={thickness}
                         fill="transparent"
-                        onClick={(e) => {}}
+                        onMouseEnter={(e) => {
+                          const sizeOfEach =
+                            (model.width * 0.8) /
+                            Object.entries(model.spliceJunctions).length
+                          const x = sizeOfEach / 2 + index * sizeOfEach
+                          model.setCurrentPanel('geneModelJunction')
+                          model.setCurrentX(x)
+                          model.setCurrentY(10)
+                          model.setCurrentSubjectId(object.status)
+                          model.setCurrentFeatureId(object.feature_id)
+                          model.setCurrentScoreVal(object.value)
+                        }}
+                        onMouseLeave={(e) => {
+                          model.setCurrentPanel('none')
+                          model.setCurrentFeatureId(null)
+                        }}
                         pointerEvents="stroke"
                       />
                       <text
@@ -184,6 +234,36 @@ export const GeneModel = ({
                         ? 'red'
                         : 'white'
                     }
+                    onMouseEnter={(e) => {
+                      const found = Object.values(model.subjectExons).find(
+                        (value) => {
+                          // @ts-ignore
+                          return value.x.includes(exon.end)
+                        },
+                      )
+                      if (found) {
+                        // @ts-ignore
+                        const subjExon = model.subjectExons[found.x]
+                        const sizeOfEach =
+                          (model.width * 0.8) /
+                          Object.values(model.subjectExons).length
+                        const index = Object.values(
+                          model.subjectExons,
+                          // @ts-ignore
+                        ).findIndex((value) => value.x === found.x)
+                        const x = sizeOfEach / 2 + index * sizeOfEach
+                        model.setCurrentPanel('geneModelExon')
+                        model.setCurrentX(x)
+                        model.setCurrentY(10)
+                        model.setCurrentSubjectId(subjExon.status)
+                        model.setCurrentFeatureId(subjExon.feature_id)
+                        model.setCurrentScoreVal(subjExon.value)
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      model.setCurrentPanel('none')
+                      model.setCurrentFeatureId(null)
+                    }}
                   />
                 )
               })
