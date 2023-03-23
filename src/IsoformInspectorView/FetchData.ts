@@ -6,6 +6,7 @@ export interface Feature {
   value: number
   status: string
   rpkm: number
+  coverage: any
 }
 
 export interface Subject {
@@ -362,6 +363,7 @@ function getHeatmapData(
             ? feature.value
             : parseFloat(feature.rpkm.toFixed(2)),
         status: feature.status ? feature.status : '',
+        coverage: feature.coverage,
       })
       justReads.push(
         readType === 'raw'
@@ -494,7 +496,7 @@ export function mapSpliceJunctions(spliceJunctions: any, geneModelData: any) {
         label: `J${i + 1}`,
         status: `${junction.status} Junction ${i + 1}`,
         feature_id: junction.x,
-        value: prevValue + junction.y,
+        value: parseFloat((prevValue + junction.y).toFixed(2)),
         drawnJunctionX1,
         drawnJunctionX2,
       }
@@ -504,10 +506,21 @@ export function mapSpliceJunctions(spliceJunctions: any, geneModelData: any) {
   return mappedJunctions
 }
 
-export function mapExons(data: any) {
+export function mapExons(data: any, geneModelData: any) {
+  const exonArrays: Array<{}> = []
+  geneModelData.transcripts.forEach((transcript: any) => {
+    exonArrays.push(transcript.exons)
+  })
+  const flattenedExons = exonArrays.flat(1)
   const mappedExons = {}
   data.forEach((subject: any) => {
     subject.data.forEach((exon: any, i: number) => {
+      const end = exon.x.split(/-|:/)[2]
+
+      const point = flattenedExons.find((exon: any) => {
+        return `${exon.end}` === `${end}`
+      })
+
       // @ts-ignore
       const prevValue = mappedExons[exon.x]?.value
         ? // @ts-ignore
@@ -522,7 +535,12 @@ export function mapExons(data: any) {
         label: `E${i + 1}`,
         status: `${exon.status} Exon ${i + 1}`,
         feature_id: exon.x,
-        value: prevValue + exon.y,
+        value: parseFloat((prevValue + exon.y).toFixed(2)),
+        coverage: exon.coverage,
+        // @ts-ignore
+        drawnExonX: point.drawnExonX,
+        // @ts-ignore
+        drawnExonRectWidth: point.drawnExonRectWidth,
       }
     })
   })

@@ -13,6 +13,7 @@ import subprocess
 import gffutils
 import pysam
 import scanpy as sc
+import numpy as np
 
 start = time.time()
 
@@ -142,6 +143,19 @@ def get_exon_count(samfile, chr, start, end):
   count = samfile.count(chr, start, end)
   return count
 
+def get_coverage(samfile, chr, start, end):
+  # returns a tuple of arrays
+  cov = samfile.count_coverage(chr, start, end)
+  out_arr = []
+  first = 0
+  for arr in list(cov):
+    if (first == 0):
+      out_arr = arr
+      first = 1
+    else:
+      out_arr = np.add(out_arr, arr)
+  return out_arr.tolist()
+
 def get_ann_expression(adata, gene_id):
   df = adata.to_df(layer="decontXcounts")
   result = df[gene_id].to_json(orient="table")
@@ -196,10 +210,12 @@ def extract_read_counts(f, annotations, gene):
       start = gene['exons'][exon]['start']
       end = gene['exons'][exon]['end']
       value = get_exon_count(samfile, chr, start, end)
+      cov = get_coverage(samfile, chr, start, end)
       exon_read_sum += value
       exon_quant.append({
         "feature_id": exon,
         "value": value,
+        "coverage": cov,
         "status": gene['exons'][exon]['status']
       })
 

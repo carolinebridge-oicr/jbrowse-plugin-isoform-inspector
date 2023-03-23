@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite'
 import { Chip, Tooltip } from '@mui/material'
 import ArrowCircleLeftIcon from '@mui/icons-material/ArrowCircleLeft'
 import ArrowCircleRightIcon from '@mui/icons-material/ArrowCircleRight'
+import CoveragePlot from './coveragePlot'
 
 export const GeneModel = ({
   model,
@@ -38,6 +39,12 @@ export const GeneModel = ({
 
   const isBackward =
     model.geneModelData?.transcripts[0].strand == -1 ? true : false
+
+  const currentExon = model.canonicalExons.find(
+    (e: any) =>
+      model.currentFeatureId?.includes(e.start + 1) &&
+      model.currentFeatureId?.includes(e.end),
+  )
 
   return (
     <div
@@ -117,6 +124,47 @@ export const GeneModel = ({
                 )
               })}
             </g>
+            {currentExon ? (
+              <rect
+                key={currentExon.uniqueId + '_canonical'}
+                width={currentExon.drawnExonRectWidth}
+                height={10}
+                x={currentExon.drawnExonX}
+                y={canonicalHeight}
+                stroke={'red'}
+                fill={'red'}
+                onMouseEnter={(e) => {
+                  const found = Object.values(model.subjectExons).find(
+                    (value) => {
+                      // @ts-ignore
+                      return value.x.includes(currentExon.end)
+                    },
+                  )
+                  if (found) {
+                    // @ts-ignore
+                    const subjExon = model.subjectExons[found.x]
+                    const sizeOfEach =
+                      (model.width * 0.8) /
+                      Object.values(model.subjectExons).length
+                    const index = Object.values(
+                      model.subjectExons,
+                      // @ts-ignore
+                    ).findIndex((value) => value.x === found.x)
+                    const x = sizeOfEach / 2 + index * sizeOfEach
+                    model.setCurrentPanel('geneModelExon')
+                    model.setCurrentX(x)
+                    model.setCurrentY(10)
+                    model.setCurrentSubjectId(subjExon.status)
+                    model.setCurrentFeatureId(subjExon.feature_id)
+                    model.setCurrentScoreVal(subjExon.value)
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  model.setCurrentPanel('none')
+                  model.setCurrentFeatureId(null)
+                }}
+              />
+            ) : null}
             <g transform="translate(0, 80)">
               {Object.entries(model.spliceJunctions).map(
                 ([key, value], index: number) => {
@@ -193,6 +241,9 @@ export const GeneModel = ({
                 },
               )}
             </g>
+            {model.showCovPlot ? (
+              <CoveragePlot model={model} height={realHeight} width={width} />
+            ) : null}
           </g>
         ) : null}
         <g>

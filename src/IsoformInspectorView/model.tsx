@@ -194,7 +194,10 @@ export default function IsoformInspectorView() {
           self.nivoData.junctions.data,
           self.geneModelData,
         )
-        self.subjectExons = mapExons(self.nivoData.exons.data)
+        self.subjectExons = mapExons(
+          self.nivoData.exons.data,
+          self.geneModelData,
+        )
         if (Object.keys(self.annotationsConfig).length === 0)
           self.annotationsConfig = data.annotationsConfig
         this.setNivoAnnotations([])
@@ -294,7 +297,14 @@ export default function IsoformInspectorView() {
         )
       },
       toggleCoveragePlot() {
+        const session = getSession(self)
         self.showCovPlot = !self.showCovPlot
+        session.notify(
+          `Canonical exon coverage plot has been ${
+            self.showCovPlot ? 'revealed' : 'hidden'
+          }`,
+          'info',
+        )
       },
       toggleAnnotationsBars() {
         getSession(self).queueDialog((handleClose) => [
@@ -358,7 +368,6 @@ export default function IsoformInspectorView() {
                   self.showCovPlot ? 'Hide' : 'Show'
                 } exon coverage plot`,
                 icon: self.showCovPlot ? VisibilityOffIcon : VisibilityIcon,
-                disabled: true,
                 onClick: () => {
                   self.toggleCoveragePlot()
                 },
