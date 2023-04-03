@@ -43,7 +43,7 @@ def parse_anno(annotation_files) -> dict:
             snake_field = snake_case(key)
             if (snake_field == 'file_name'):
               file_name_header = key
-            if (snake_field == 'subject_id' or snake_field == 'sample_id'): # TODO: barcode for single cell?
+            if (snake_field == 'subject_id' or snake_field == 'sample_id' or snake_field == 'object_id'): # TODO: barcode for single cell?
               sample_id_header = key
         if file_name_header == '':
           raise Exception(f"Annotation file '{anno}' does not contain required 'filename' field.")
@@ -180,8 +180,7 @@ def extract_read_counts(f, annotations, gene):
 
     subj_annotations = output_anno(anno)
 
-  value = []
-  junction_quant = []
+  junctions = {}
   junction_read_sum = 0
   if (f.lower().endswith('.bam')):
     # counting junctions for alignment files
@@ -196,65 +195,54 @@ def extract_read_counts(f, annotations, gene):
       chr = gene['junctions'][junction]['chr']
       start = gene['junctions'][junction]['start']
       end = gene['junctions'][junction]['end']
-      value = get_junction_count(samfile, chr, start, end)
+      try:
+        value = get_junction_count(samfile, chr, start, end)
+      except ValueError:
+        chr = 'chr' + chr
+        value = get_junction_count(samfile, chr, start, end)
       junction_read_sum += value
-      junction_quant.append({
-          "feature_id": junction,
-          "value": value,
-          "status": gene['junctions'][junction]['status']
-      })
-    exon_quant = []
+      junctions[junction] = {
+        "feature_id": junction,
+        "value": value,
+        "status": gene['junctions'][junction]['status']
+      }
+    exons = {}
     exon_read_sum = 0
     for exon in gene['exons']:
       chr = gene['exons'][exon]['chr']
       start = gene['exons'][exon]['start']
       end = gene['exons'][exon]['end']
-      value = get_exon_count(samfile, chr, start, end)
+      try:
+        value = get_exon_count(samfile, chr, start, end)
+      except ValueError:
+        chr = 'chr' + chr
+        value = get_exon_count(samfile, chr, start, end)
       cov = get_coverage(samfile, chr, start, end)
       exon_read_sum += value
-      exon_quant.append({
+      exons[exon] = {
         "feature_id": exon,
         "value": value,
         "coverage": cov,
         "status": gene['exons'][exon]['status']
-      })
+      }
 
     samfile.close()
-  if (f.lower().endswith('.h5ad')):
-    gene_id = gene['id']
-    adata = sc.read(f)
-    value = get_ann_expression(adata, gene_id)
-    # TODO: pysam has some normalization functionality for anndata files
-    read_sum += value
-    adata.file.close()
-
-    junction_quant.append({
-      "feature_id": '',
-      "value": value,
-    })
 
   # normalization performed with RPKM
   gene_length = gene['end'] - gene['start']
   scale_factor = junction_read_sum / 1000000
-  revised_junction_quant = []
-  for junction in junction_quant:
-    rpkm = (junction['value'] / scale_factor) / gene_length
-    revised_junction_quant.append({
-      **junction,
-      "rpkm": rpkm,
-    })
-  revised_exon_quant = []
-  for exon in exon_quant:
-    rpkm = (exon['value'] / scale_factor) / gene_length
-    revised_exon_quant.append({
-      **exon,
-      "rpkm": rpkm,
-    })
+  for junction in list(junctions.keys()):
+    rpkm = (junctions[junction]['value'] / scale_factor) / gene_length if scale_factor > 0 else 0
+    junctions[junction]["rpkm"] = rpkm
+
+  for exon in list(exons.keys()):
+    rpkm = (exons[exon]['value'] / scale_factor) / gene_length if scale_factor > 0 else 0
+    exons[exon]["rpkm"] = rpkm
 
   subject = {
     "subject_id": subject_id,
-    "junctions": revised_junction_quant,
-    "exons": revised_exon_quant,
+    "junctions": junctions,
+    "exons": exons,
     "annotations": subj_annotations
   }
 
@@ -267,53 +255,63 @@ def main(score_client, manifest, seq_file_output_dir, gff, annotation_files, out
     f = open(genes[0], 'r')
     gene_list = f.read().split()
 
+  # define some process variables, allows extensibility in the future
+  subject_type = "sample" # subject type = cell...some sort of id here
+
+  # start the dictionary of genes
+  gene_dict = {}
+  print('Operation 2/3: Parsing gff3 file...', flush=True)
   for gene_id in gene_list:
-    # TODO: complete compatibility step for AnnData files
-
-    # define some process variables, allows extensibility in the future
-    subject_type = "sample"
-
-    print('Operation 1/3: Parsing annotations file...', flush=True)
-    # parse annotation files, which are TSV files providing additional information about sequencing files
-    annotations = parse_anno(annotation_files)
-
-    print('Operation 2/3: Parsing gff3 file...', flush=True)
     # parse gff
     gene = parse_gff3(gff, gene_id)
-    subjects_arr = []
+    gene_dict[gene_id] = {
+      "gene_id": gene_id,
+      "gene_name": gene['name'],
+      "subject_type": subject_type,
+      "observation_type": "read_counts", # TODO: might remove or make this something else later
+      "subjects": {}, # a dictionary of subjects
+      "full_gene_obj": gene
+    }
 
-    if (score_client):
-      # user is bulk processing while downloading
-      if (not manifest):
-        raise Exception(
-          f'A manifest file must be provided to bulk download and process files.'
-        )
-      files = []
-      # read the manifest to see how many files are being downloaded and what their names are
-      with open (manifest) as f:
-        reader = csv.DictReader(f, delimiter='\t')
-        for row in reader:
-          files.append(row['file_name'])
+  print('Operation 1/3: Parsing annotations file...', flush=True)
+  # parse annotation files, which are TSV files providing additional information about sequencing files
+  annotations = parse_anno(annotation_files)
+
+  if (score_client):
+    # user is bulk processing while downloading
+    if (not manifest):
+      raise Exception(
+        f'A manifest file must be provided to bulk download and process files.'
+      )
+    files = []
+    # read the manifest to see how many files are being downloaded and what their names are
+    with open (manifest) as f:
+      reader = csv.DictReader(f, delimiter='\t')
+      for row in reader:
+        files.append({"name": row['file_name'], "object": row['object_id']})
+    i = 0
+    for file in files:
       # open the download process and begin
-      download_process = subprocess.Popen([f'{score_client}', 'download', '--manifest', f'{manifest}', '--output-dir', f'{seq_file_output_dir}'])
+      download_process = subprocess.Popen([f'{score_client}', 'download', '--object-id', f'{file["object"]}', '--output-dir', f'{seq_file_output_dir}'])
 
       # poll the process for completion, continue processing until each file has been processed
-      i = 0
-      print('Operation 3/3: Extracting read counts...', flush=True)
-      check_f = open('output.txt', 'w')
+      print(f'\t{i+1}/{len(files)}: processing file {file["name"]}', flush=True)
+      current_bam = f'{seq_file_output_dir}{file["name"]}'
+      current_bai = f'{seq_file_output_dir}{file["name"]}.bai'
       while (download_process.poll() is None and i < len(files)):
-        current_bam = f'{seq_file_output_dir}{files[i]}'
-        current_bai = f'{seq_file_output_dir}{files[i]}.bai'
-        # check if the currently downloading file exists 
-        if (os.path.isfile(current_bam)):
-          # assumes the bai file was downloaded first, which seems to be the case with score
-          print(f'\t{i+1}/{len(files)}: processing file {files[i]}', flush=True, file=check_f)
-          subject = extract_read_counts(current_bam, annotations, gene)
-          subjects_arr.append(subject)
-          subprocess.Popen(['rm', f'{current_bam}', f'{current_bai}'])
-          # file has finished processing, iterate the counter and wait until the next files are done
-          i+=1
-    else:
+          # check if the currently downloading file exists 
+          if (os.path.isfile(current_bam) and os.path.isfile(current_bai)):
+            for gene_id in gene_list:
+              gene = gene_dict[gene_id]["full_gene_obj"]
+              # assumes the bai file was downloaded first, which seems to be the case with score
+              subject = extract_read_counts(current_bam, annotations, gene)
+              gene_dict[gene_id]["subjects"][subject["subject_id"]] = subject
+            subprocess.Popen(['rm', f'{current_bam}', f'{current_bai}'])
+            # file has finished processing, iterate the counter and wait until the next files are done
+            i+=1
+  else:
+    for gene_id in gene_list:
+      gene = gene_dict[gene_id]["full_gene_obj"]
       # user is processing existing files on the system
       print('Operation 3/3: Extracting read counts...', flush=True)
       i = 0
@@ -322,19 +320,33 @@ def main(score_client, manifest, seq_file_output_dir, gff, annotation_files, out
         filename = f'{seq_file_output_dir}{f}'
         if os.path.isfile(filename) and f.endswith('.bam'):
           seq_files.append(filename)
+
       # extract read counts
       for f in seq_files:
         i+=1
         print(f'\t{i}/{len(seq_files)}: processing file {f}', flush=True)
         subject = extract_read_counts(f, annotations, gene)
-        subjects_arr.append(subject)
+        gene_dict[gene_id]["subjects"][subject["subject_id"]] = subject
 
-    # whether bulk downloading or static, output is generated here
+  for gene_id in gene_list:
+    gene_obj = gene_dict[gene_id]
+    subjects_arr = []
+    for subject in list(gene_obj["subjects"].values()):
+      junctions = list(subject["junctions"].values())
+      exons = list(subject["exons"].values())
+      annotations = subject['annotations']
+      subjects_arr.append({
+        "subject_id": subject["subject_id"],
+        "junctions": junctions,
+        "exons": exons,
+        "annotations": annotations
+      })
+
     output = {
-      "gene_id": gene_id,
-      "gene_name": gene['name'],
-      "subject_type": subject_type,
-      "observation_type": "read_counts",
+      "gene_id": gene_obj["gene_id"],
+      "gene_name": gene_obj["gene_name"],
+      "subject_type": gene_obj["subject_type"],
+      "observation_type": gene_obj["observation_type"],
       "subjects": subjects_arr
     }
 
@@ -351,8 +363,8 @@ def main(score_client, manifest, seq_file_output_dir, gff, annotation_files, out
     with open(output_file, 'w+') as j:
       j.write(json.dumps(output, indent=2))
 
-    end = time.time()
-    print(f'process.py has finished. Execution time: {end - start} seconds')
+  end = time.time()
+  print(f'process.py has finished. Execution time: {end - start} seconds')
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(
