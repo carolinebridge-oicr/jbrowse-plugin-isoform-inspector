@@ -6,6 +6,7 @@ import json
 import argparse
 import random as rd
 from re import sub
+from re import search
 import time
 import subprocess
 
@@ -55,7 +56,83 @@ def parse_anno(annotation_files) -> dict:
 
   return annotations
 
-def parse_gff3(gff, gene_id):
+def drop_attributes(attributes_str, attributes_to_drop=[]) -> str:
+  attributes_str = attributes_str.strip()
+  new_attributes = []
+  for attr in attributes_str.split(';'):
+    if attr.split('=')[0] in attributes_to_drop:
+      continue
+    new_attributes.append(attr)
+
+  return ";".join(new_attributes)
+
+def get_exon_info(row) -> dict:
+  row = row.strip()
+  cols = row.split('\t')
+  if len(cols) == 9 and cols[2] == 'exon':
+    attributes = cols[8].split(';')
+    id = attributes[0].split('=')[1]
+    _, transcript_id, exon_number = id.split(':')
+
+    return {
+      'start': cols[3],
+      'end': cols[4],
+      'strand': cols[6],
+      'id': id,
+      'transcript_id': transcript_id,
+      'exon_number': exon_number,
+      'row': row
+    }
+
+  else:
+    return {}
+
+def add_intron(row, prev_row):
+  output = ''
+  cols = row.split("\t")
+  exon_info = get_exon_info(row)
+  prev_exon_info = get_exon_info(prev_row)
+  if exon_info and prev_exon_info and exon_info['transcript_id'] == prev_exon_info['transcript_id']:
+    if cols[6] == '+':
+      start = int(prev_exon_info['end']) + 1
+      end = int(exon_info['start']) - 1
+    else:
+      start = int(exon_info['end']) + 1
+      end = int(prev_exon_info['start']) - 1
+
+    intron_number = prev_exon_info['exon_number']
+    intron_id = f"intron:{exon_info['transcript_id']}:{intron_number}"
+
+    cleaned_attr = drop_attributes(cols[8], ['ID', 'exon_number', 'exon_id'])
+    attr = f"ID={intron_id};{cleaned_attr}"
+    output += "\t".join([cols[0], cols[1], 'intron', str(start), str(end), '.', exon_info['strand'], '.', attr])
+  return output
+
+def add_introns_rm_cds_utr_start_stop_codon(gff):
+  new_gff_name = f'{gff}.with-introns.no-cds-utr-stop-start.gff3'
+  new_gff = open(new_gff_name, 'w')
+  prev_row = ''
+  with open(gff, 'r') as g:
+    prev_row = ''
+    for row in g:
+      if "\tCDS\t" not in row and "\tUTR\t" not in row and "\tstart_codon\t" not in row and "\tstop_codon\t" not in row:
+        output = add_intron(row, prev_row)
+        if output != '':
+          print(output, file=new_gff)
+        # if search(r'CDS', row) is None and search(r'UTR', row) is None and search(r'start_codon', row) is None and search(r'stop_codon', row) is None:
+        print(row, end='', file=new_gff)
+        if "\texon\t" in row:
+          prev_row = row
+  new_gff.close()
+  return new_gff_name
+
+def parse_gff3(gff_raw, gene_id):
+  if not os.path.isfile(f'{gff_raw}.with-introns.no-cds-utr-stop-start.gff3'):
+    # removes utr start stop codons
+    gff = add_introns_rm_cds_utr_start_stop_codon(gff_raw)
+  else:
+    gff = f'{gff_raw}.with-introns.no-cds-utr-stop-start.gff3'
+
   db_filename = f'{gff}.db'
   if not os.path.isfile(db_filename):
     gff_db = gffutils.create_db(gff, db_filename)
@@ -260,7 +337,7 @@ def main(score_client, manifest, seq_file_output_dir, gff, annotation_files, out
 
   # start the dictionary of genes
   gene_dict = {}
-  print('Operation 2/3: Parsing gff3 file...', flush=True)
+  print('Operation 1/3: Parsing gff3 file...', flush=True)
   for gene_id in gene_list:
     # parse gff
     gene = parse_gff3(gff, gene_id)
@@ -273,7 +350,7 @@ def main(score_client, manifest, seq_file_output_dir, gff, annotation_files, out
       "full_gene_obj": gene
     }
 
-  print('Operation 1/3: Parsing annotations file...', flush=True)
+  print('Operation 2/3: Parsing annotations file...', flush=True)
   # parse annotation files, which are TSV files providing additional information about sequencing files
   annotations = parse_anno(annotation_files)
 
