@@ -2,21 +2,9 @@ import Plugin from '@jbrowse/core/Plugin'
 import PluginManager from '@jbrowse/core/PluginManager'
 import { getSession } from '@jbrowse/core/util'
 import { version } from '../package.json'
-import { fetchLocalData } from './IsoformInspectorView/FetchData'
+import { fetchLocalDataFromName } from './IsoformDataAdapter/IsoformDataAdapter'
 
 import IsoformInspectorViewF from './IsoformInspectorView'
-
-// colour-blind friendly palette retrieved from https://www.nature.com/articles/nmeth.1618
-const nmetPalette = [
-  // '#000000',
-  '#e69d00',
-  '#56b3e9',
-  '#009e74',
-  '#f0e442',
-  '#0071b2',
-  '#d55c00',
-  '#cc79a7',
-]
 
 export default class IsoformInspectorPlugin extends Plugin {
   name = 'IsoformInspector'
@@ -51,53 +39,40 @@ export default class IsoformInspectorPlugin extends Plugin {
                         const session = getSession(self)
                         // get the geneId from the feature clicked
                         const geneId = feature.data.gene_id
+                        const geneName = feature.data.gene_name
+                        const geneModel = feature.data
                         try {
-                          // retrieving and setting data within the model
-                          const data = await fetchLocalData(
-                            feature.data,
-                            geneId,
-                            nmetPalette,
-                          )
-                          if (data) {
-                            session.addView('IsoformInspectorView', {})
+                          try {
+                            const data = await fetchLocalDataFromName(
+                              geneName,
+                              geneId,
+                              geneModel,
+                            )
+                            session.addView('IsoformInspectorView', {
+                              geneId: geneId,
+                              geneModel: geneModel,
+                              isImport: false,
+                            })
+                            // TODO: possible to set the onLoad properties as the default config
+                            //  instead of through a method but might be breaking for how the refresh
+                            //  is currently done
                             const view = session.views[session.views.length - 1]
                             // @ts-ignore
-                            view.setGeneId(geneId)
-                            // @ts-ignore
-                            view.setGeneModel(feature.data)
-                            // @ts-ignore
-                            view.setOnLoadProperties(data)
-
-                            // @ts-ignore
-                            const annots = view.getAnnotationsConfig()
-                            const annotsToHide = [{}]
-                            Object.entries(annots).forEach(([key, value]) => {
-                              // Hide annotation if there is only one annotation value and it is empty
-                              // Hide annotation if number of subjects === number of annotation possibility
-                              // Hide annotation if number of annotation possibilities exceeds nmetPalette.length
-                              const checkLen = Object.entries(
-                                // @ts-ignore
-                                value.fields,
-                              ).length
-                              if (
-                                // @ts-ignore
-                                checkLen <= 1 ||
-                                // @ts-ignore
-                                checkLen ===
-                                  // @ts-ignore
-                                  view.getSubjectIds().length ||
-                                // @ts-ignore
-                                checkLen > nmetPalette.length
-                              ) {
-                                annotsToHide.push({ field: key, show: false })
-                              }
+                            view.setOnLoadProperties(data, true)
+                          } catch (error) {
+                            session.notify(
+                              `You are viewing this import form because there is insufficient data for this gene in public/data`,
+                              'info',
+                            )
+                            session.addView('IsoformInspectorView', {
+                              geneId: geneId,
+                              geneModel: geneModel,
+                              isImport: true,
                             })
-                            // @ts-ignore
-                            view.setNivoAnnotations(annotsToHide)
                           }
                         } catch (error) {
                           session.notify(
-                            `Data for the selected gene unavailable. ${error}`,
+                            `Unable to open the isoform inspector: ${error}`,
                             'error',
                           )
                         }

@@ -8,6 +8,7 @@ import Heatmap from './heatmap'
 import GeneModel from './geneModel'
 import SubjectAnnotations from './SubjectAnnotations'
 import Dendrogram from './dendrogram'
+import ImportForm from './ImportForm'
 
 export const accentColorDark = '#005AB5' // TODO: colour of the crosshair to be freely selectable
 
@@ -335,63 +336,70 @@ const IsoformInspectorView = observer(({ model }: { model: any }) => {
   const height = model.height
   const width = model.width
   const gap = 5
+  const form = model.isImport
 
-  if (model.geneId) {
-    model.loadGeneData(model.geneId)
+  if (model.data) {
+    model.setOnLoadProperties(model.data)
   }
 
   return (
-    <div
-      style={{
-        padding: '5px',
-        display: 'flex',
-        justifyContent: 'center',
-        overflow: 'scroll',
-        gap: gap,
-      }}
-    >
-      <AnnotationLegend model={model} />
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <ModeToggle model={model} />
-        <svg width={width * 0.9 + gap} height={height}>
-          <svg width={width * 0.1} height={height}>
-            <SubjectAnnotations
-              model={model}
-              width={width * 0.1}
-              height={height}
-            />
-          </svg>
-          <svg width={width * 0.8} height={height} x={width * 0.1 + gap}>
-            <Heatmap model={model} width={width * 0.8} height={height} />
-          </svg>
-          <Crosshair
-            model={model}
-            width={width + gap}
-            height={height}
-            gap={gap}
-          />
-          <HeatmapTooltip
-            model={model}
-            width={width * 0.9 + gap}
-            height={height}
-          />
-        </svg>
-        <div style={{ display: 'flex' }}>
-          <svg
-            width={width * 0.1 + gap}
-            height={500}
-            onMouseEnter={(e) => {
-              model.setCurrentPanel('none')
-            }}
-          />
-          <div>
-            <Labels model={model} width={width * 0.8} />
-            <GeneModel model={model} width={width * 0.8} height={500} />
+    <>
+      {form ? (
+        <ImportForm model={model} />
+      ) : (
+        <div
+          style={{
+            padding: '5px',
+            display: 'flex',
+            justifyContent: 'center',
+            overflow: 'scroll',
+            gap: gap,
+          }}
+        >
+          <AnnotationLegend model={model} />
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <ModeToggle model={model} />
+            <svg width={width * 0.9 + gap} height={height}>
+              <svg width={width * 0.1} height={height}>
+                <SubjectAnnotations
+                  model={model}
+                  width={width * 0.1}
+                  height={height}
+                />
+              </svg>
+              <svg width={width * 0.8} height={height} x={width * 0.1 + gap}>
+                <Heatmap model={model} width={width * 0.8} height={height} />
+              </svg>
+              <Crosshair
+                model={model}
+                width={width + gap}
+                height={height}
+                gap={gap}
+              />
+              <HeatmapTooltip
+                model={model}
+                width={width * 0.9 + gap}
+                height={height}
+              />
+            </svg>
+            <div style={{ display: 'flex' }}>
+              <svg
+                width={width * 0.1 + gap}
+                height={500}
+                onMouseEnter={(e) => {
+                  model.setCurrentPanel('none')
+                }}
+              />
+              <div>
+                <Labels model={model} width={width * 0.8} />
+                <GeneModel model={model} width={width * 0.8} height={500} />
+              </div>
+            </div>
           </div>
+          <Dendrogram model={model} width={width * 0.1} height={height} />
         </div>
-      </div>
-      <Dendrogram model={model} width={width * 0.1} height={height} />
-    </div>
+      )}
+    </>
   )
 })
 

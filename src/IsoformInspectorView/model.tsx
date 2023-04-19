@@ -15,11 +15,10 @@ import ViewCarouselIcon from '@mui/icons-material/ViewCarousel'
 import FilterAltIcon from '@mui/icons-material/FilterAlt'
 
 import {
-  fetchLocalData,
   getNivoHmData,
   mapSpliceJunctions,
   mapExons,
-} from './FetchData'
+} from '../IsoformDataAdapter/IsoformDataProcessingHelpers'
 import ToggleAnnotationsDialog from './components/ToggleAnnotationsDialog'
 
 // colour-blind friendly palette retrieved from https://www.nature.com/articles/nmeth.1618
@@ -68,9 +67,11 @@ export default function IsoformInspectorView() {
       showCovPlot: true,
       mode: 'junction',
       readType: 'raw',
+      isImport: true,
+      data: types.frozen(),
     })
     .volatile(() => ({
-      data: undefined as unknown as any,
+      // data: undefined as unknown as any,
       nivoData: undefined as unknown as any,
       clusterData: undefined as unknown as any,
       nivoAnnotations: undefined as unknown as any,
@@ -87,6 +88,7 @@ export default function IsoformInspectorView() {
       subjects: {},
       features: {},
       subjectIds: [],
+      files: [],
     }))
     .actions((self) => ({
       setSubjects(subjects: any) {
@@ -119,6 +121,12 @@ export default function IsoformInspectorView() {
       setReadType(mode: string) {
         self.readType = mode
         this.setOnLoadProperties(self.data)
+      },
+      setFiles(files: any) {
+        self.files = files
+      },
+      setIsImport(is: boolean) {
+        self.isImport = is
       },
       getAnnotationsConfig() {
         return self.annotationsConfig
@@ -182,7 +190,34 @@ export default function IsoformInspectorView() {
             ? self.nivoData.junctions.clusterData
             : self.nivoData.exons.clusterData
       },
-      setOnLoadProperties(data: any) {
+      setFirstLoadAnnots() {
+        // @ts-ignore
+        const annots = this.getAnnotationsConfig()
+        const annotsToHide = [{}]
+        Object.entries(annots).forEach(([key, value]) => {
+          // Hide annotation if there is only one annotation value and it is empty
+          // Hide annotation if number of subjects === number of annotation possibility
+          // Hide annotation if number of annotation possibilities exceeds nmetPalette.length
+          const checkLen = Object.entries(
+            // @ts-ignore
+            value.fields,
+          ).length
+          if (
+            // @ts-ignore
+            checkLen <= 1 ||
+            // @ts-ignore
+            checkLen ===
+              // @ts-ignore
+              this.getSubjectIds().length ||
+            // @ts-ignore
+            checkLen > nmetPalette.length
+          ) {
+            annotsToHide.push({ field: key, show: false })
+          }
+        })
+        return annotsToHide
+      },
+      setOnLoadProperties(data: any, firstLoad?: boolean) {
         this.setSubjects(data.subjects)
         this.setSubjectIds(data.subjectIds)
         self.data = data
@@ -200,7 +235,9 @@ export default function IsoformInspectorView() {
         )
         if (Object.keys(self.annotationsConfig).length === 0)
           self.annotationsConfig = data.annotationsConfig
-        this.setNivoAnnotations([])
+        let setAnnot: Array<{}> = []
+        if (firstLoad) setAnnot = this.setFirstLoadAnnots()
+        this.setNivoAnnotations(setAnnot)
       },
     }))
     .actions((self) => ({
@@ -235,19 +272,6 @@ export default function IsoformInspectorView() {
       setDataState(state: string) {
         self.dataState = state
       },
-      loadGeneData: flow(function* (geneId) {
-        self.dataState = 'pending'
-        try {
-          const localData = yield fetchLocalData(
-            self.geneModel,
-            geneId,
-            self.colourPalette,
-          )
-          self.setOnLoadProperties(localData)
-        } catch (error) {
-          self.error = error
-        }
-      }),
       setGeneId(geneId: string) {
         self.geneId = geneId
       },
