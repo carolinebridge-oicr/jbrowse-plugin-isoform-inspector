@@ -115,7 +115,7 @@ def add_introns_rm_cds_utr_start_stop_codon(gff):
   with open(gff, 'r') as g:
     prev_row = ''
     for row in g:
-      if "\tCDS\t" not in row and "\tUTR\t" not in row and "\tstart_codon\t" not in row and "\tstop_codon\t" not in row:
+      if "\tCDS\t" not in row and "\tUTR\t" not in row and "\tfive_prime_UTR\t" not in row and "\tthree_prime_UTR\t" not in row and "\tstart_codon\t" not in row and "\tstop_codon\t" not in row:
         output = add_intron(row, prev_row)
         if output != '':
           print(output, file=new_gff)
@@ -159,7 +159,10 @@ def parse_gff3(gff_raw, gene_id):
     chr = f.seqid.replace('chr', '')
     start = f.start
     end = f.end
-    [status] = f.attributes['transcript_status'] # might be fragile
+    try:
+      [status] = f.attributes['transcript_status']
+    except:
+      status = 'UNDEFINED'
     gene['junctions'][f"{chr}:{start}-{end}"] = {
       "status": status,
       "chr": chr,
@@ -171,7 +174,10 @@ def parse_gff3(gff_raw, gene_id):
     chr = f.seqid.replace('chr', '')
     start = f.start
     end = f.end
-    [status] = f.attributes['transcript_status'] # might be fragile
+    try:
+      [status] = f.attributes['transcript_status']
+    except:
+      status = 'UNDEFINED'
     gene['exons'][f"{chr}:{start}-{end}"] = {
       "status": status,
       "chr": chr,
@@ -243,6 +249,109 @@ def get_ann_expression(adata, gene_id):
 
   return parsed['data']
 
+def sc_extract_read_counts(f, annotations, gene):
+  samfile = pysam.AlignmentFile(f, 'rb')
+  junction_read_sum = 0
+  exon_read_sum = 0
+  cells = {}
+  for junction in gene['junctions']:
+    # gene reads spanning across canonical junctions
+    chr = gene['junctions'][junction]['chr']
+    start = gene['junctions'][junction]['start']
+    end = gene['junctions'][junction]['end']
+
+    try:
+      samfile.fetch(chr, start, end)
+    except ValueError:
+      chr = 'chr' + chr
+
+    for seq in samfile.fetch(chr, start, end):
+      count = 0
+      ref_start = seq.reference_start + 1
+      cell_barcode = seq.query_name
+      for seg in seq.cigar:
+        op, size = seg
+        if op == 3: # intron, skipped region from the reference
+            ref_end = ref_start + size - 1
+            if ref_start == start and ref_end == end:
+                count += 1
+
+        if op in (0, 2, 3): # increase the ref_start for match, deletion, or skipped reference
+            ref_start += size
+      value = count
+      junction_read_sum += value
+      try:
+        cells[cell_barcode]["subject_id"] = cell_barcode
+      except KeyError:
+        cells[cell_barcode] = {
+          "subject_id": cell_barcode,
+          "junctions": {},
+          "exons": {}
+        }
+      cells[cell_barcode]["junctions"][junction] = {
+        "feature_id": junction,
+        "value": value,
+        "status": gene['junctions'][junction]['status']
+      }
+
+  for exon in gene['exons']:
+    # gene reads spanning across canonical exons
+    chr = gene['exons'][exon]['chr']
+    start = gene['exons'][exon]['start']
+    end = gene['exons'][exon]['end']
+
+    try:
+      samfile.fetch(chr, start, end)
+    except ValueError:
+      chr = 'chr' + chr
+
+    for seq in samfile.fetch(chr, start, end):
+      cell_barcode = seq.query_name
+      value = samfile.count(chr, start, end)
+      exon_read_sum += value
+      try:
+        cells[cell_barcode]["subject_id"] = cell_barcode
+      except KeyError:
+        cells[cell_barcode] = {
+          "subject_id": cell_barcode,
+          "junctions": {},
+          "exons": {},
+        }
+      cells[cell_barcode]["exons"][exon] = {
+        "feature_id": exon,
+        "value": value,
+        "coverage": get_coverage(samfile, chr, start, end),
+        "status": gene['exons'][exon]['status']
+      }
+
+  samfile.close()
+
+  # normalization performed with RPKM
+  gene_length = gene['end'] - gene['start']
+  scale_factor = junction_read_sum / 1000000
+  for cell in list(cells.values()):
+    # TODO: temporary annots
+    cell["annotations"] = [{}]
+    cell["check"] = 0
+    junctions = cell["junctions"]
+    for junction in list(junctions.keys()):
+      rpkm = (junctions[junction]['value'] / scale_factor) / gene_length if scale_factor > 0 else 0
+      junctions[junction]["rpkm"] = rpkm
+      cell["check"] += rpkm
+
+  scale_factor = exon_read_sum / 1000000
+  for cell in list(cells.values()):
+    cell["annotations"] = [{}]
+    exons = cell["exons"]
+    for exon in list(exons.keys()):
+      rpkm = (exons[exon]['value'] / scale_factor) / gene_length if scale_factor > 0 else 0
+      exons[exon]["rpkm"] = rpkm
+      cell["check"] += rpkm
+    if cell["check"] == 0:
+      del cells[cell["subject_id"]]
+
+  return cells
+
 def extract_read_counts(f, annotations, gene):
   # checks if the annotations file exists
   seq_filename = os.path.basename(f)
@@ -312,6 +421,7 @@ def extract_read_counts(f, annotations, gene):
     rpkm = (junctions[junction]['value'] / scale_factor) / gene_length if scale_factor > 0 else 0
     junctions[junction]["rpkm"] = rpkm
 
+  scale_factor = exon_read_sum / 1000000
   for exon in list(exons.keys()):
     rpkm = (exons[exon]['value'] / scale_factor) / gene_length if scale_factor > 0 else 0
     exons[exon]["rpkm"] = rpkm
@@ -325,7 +435,7 @@ def extract_read_counts(f, annotations, gene):
 
   return subject
 
-def main(score_client, manifest, seq_file_output_dir, gff, annotation_files, output_dir, genes):
+def main(score_client, manifest, seq_file_output_dir, gff, annotation_files, output_dir, single_cell, genes):
   gene_list = genes
   # genes is either a single gene id, a list of gene ids, or a .txt file of gene names (space delimited)
   if ('.txt' in genes[0]):
@@ -333,7 +443,8 @@ def main(score_client, manifest, seq_file_output_dir, gff, annotation_files, out
     gene_list = f.read().split()
 
   # define some process variables, allows extensibility in the future
-  subject_type = "sample" # subject type = cell...some sort of id here
+  subject_type = "cell" if single_cell else "sample"
+  observation_type = "read_counts"
 
   # start the dictionary of genes
   gene_dict = {}
@@ -345,7 +456,7 @@ def main(score_client, manifest, seq_file_output_dir, gff, annotation_files, out
       "gene_id": gene_id,
       "gene_name": gene['name'],
       "subject_type": subject_type,
-      "observation_type": "read_counts", # TODO: might remove or make this something else later
+      "observation_type": observation_type, # TODO: might remove or make this something else later
       "subjects": {}, # a dictionary of subjects
       "full_gene_obj": gene
     }
@@ -402,8 +513,13 @@ def main(score_client, manifest, seq_file_output_dir, gff, annotation_files, out
       for f in seq_files:
         i+=1
         print(f'\t{i}/{len(seq_files)}: processing file {f}', flush=True)
-        subject = extract_read_counts(f, annotations, gene)
-        gene_dict[gene_id]["subjects"][subject["subject_id"]] = subject
+        if single_cell is True:
+          cells = sc_extract_read_counts(f, annotations, gene)
+          for cell in list(cells.values()):
+            gene_dict[gene_id]["subjects"][cell["subject_id"]] = cell
+        else:
+          subject = extract_read_counts(f, annotations, gene)
+          gene_dict[gene_id]["subjects"][subject["subject_id"]] = subject
 
   for gene_id in gene_list:
     gene_obj = gene_dict[gene_id]
@@ -419,6 +535,7 @@ def main(score_client, manifest, seq_file_output_dir, gff, annotation_files, out
         "annotations": annotations
       })
 
+    gene_name = gene_obj["gene_name"]
     output = {
       "gene_id": gene_obj["gene_id"],
       "gene_name": gene_obj["gene_name"],
@@ -434,7 +551,7 @@ def main(score_client, manifest, seq_file_output_dir, gff, annotation_files, out
     # TODO: eventually the front end should be able to process a variety of .jsons for the same gene
     i = 1
     while (os.path.exists(output_file)):
-      output_file = os.path.join(output_dir, f"{gene_id}_subj_observ_{i}.json")
+      output_file = os.path.join(output_dir, f"{gene_id}_{gene_name}_subj_observ_{i}.json")
       i += 1
 
     with open(output_file, 'w+') as j:
@@ -458,8 +575,10 @@ if __name__ == '__main__':
                     help='annotation file(s) providing more info about samples, must contain a file_name field', required=True)
   parser.add_argument('-o', '--output-dir', type=str, default='../public/data',
                     help='Output directory')
+  parser.add_argument('-sc', '--single-cell', type=bool, default=False,
+                    help='bool where if true processes alignment data as single cell', required=False)
   parser.add_argument('-g', '--genes', type=str, nargs='+',
                     help='Ensembl gene ID, or list of gene ID\'s', required=True)
   args = parser.parse_args()
 
-  main(args.score_client, args.manifest, args.seq_file_dir, args.gff, args.annotation_file, args.output_dir, args.genes)
+  main(args.score_client, args.manifest, args.seq_file_dir, args.gff, args.annotation_file, args.output_dir, args.single_cell, args.genes)

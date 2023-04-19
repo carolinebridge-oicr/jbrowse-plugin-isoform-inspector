@@ -41,9 +41,9 @@ To use the isoform inspector, you will need to perform a pre-processing step usi
 
 Follow the instructions on the README file of the linked repository to create these files. Note this process may take some time, depending on the size of your data.
 
-Unless otherwise directed, your files should be in the appropriate folder for the isoform inspector plugin to access.
-
 ## Quickstart
+
+**coming soon**
 
 If you'd just like to see the project in action, the repository comes pre-equipped with some quickstart files.
 
