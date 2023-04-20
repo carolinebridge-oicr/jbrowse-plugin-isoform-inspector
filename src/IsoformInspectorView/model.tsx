@@ -84,6 +84,7 @@ export default function IsoformInspectorView() {
       currentFeatureId: undefined as unknown as any,
       currentScoreVal: undefined as unknown as any,
       currentAnnotation: undefined as unknown as any,
+      readDepth: 0,
       uiState: {},
       subjects: {},
       features: {},
@@ -127,6 +128,9 @@ export default function IsoformInspectorView() {
       },
       setIsImport(is: boolean) {
         self.isImport = is
+      },
+      setReadDepth(readDepth: number) {
+        self.readDepth = readDepth
       },
       getAnnotationsConfig() {
         return self.annotationsConfig

@@ -56,7 +56,10 @@ const HeatmapTooltip = observer(
     ) {
       tooltipLineA = `Label: ${model.currentSubjectId}` // e.g. KNOWN Junction 1
       tooltipLineB = `Feature: ${model.currentFeatureId}`
-      tooltipLineC = `Total read count: ${model.currentScoreVal}` // sum of the scores for that feature
+      tooltipLineC = `Total ${
+        model.readType === 'raw' ? '' : '(normalized)'
+      } read count: ${model.currentScoreVal}` // sum of the scores for that feature
+      if (model.readDepth > 0) tooltipLineC = `Read depth: ${model.readDepth}`
 
       xPos = model.uiState.currentX + width * 0.1 + 20
       yPos = model.uiState.currentY + height

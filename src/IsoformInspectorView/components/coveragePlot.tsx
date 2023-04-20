@@ -45,6 +45,27 @@ export const CoveragePlot = ({
               y={0}
               stroke={'blue'}
               fill={'blue'}
+              onMouseLeave={(e) => {
+                model.setReadDepth(0)
+                model.setCurrentPanel('none')
+                model.setCurrentFeatureId(null)
+              }}
+              onMouseEnter={(e) => {
+                const sizeOfEach =
+                  (model.width * 0.8) / Object.values(model.subjectExons).length
+                const index = Object.values(
+                  model.subjectExons,
+                  // @ts-ignore
+                ).findIndex((value) => value.x === exon.x)
+                const x = sizeOfEach / 2 + index * sizeOfEach
+                model.setCurrentPanel('geneModelExon')
+                model.setCurrentX(x)
+                model.setCurrentY(10)
+                model.setCurrentSubjectId(exon.status)
+                model.setCurrentFeatureId(exon.feature_id)
+                model.setCurrentScoreVal(exon.value)
+                model.setReadDepth(point)
+              }}
             />
           )
         })
