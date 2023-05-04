@@ -12,7 +12,6 @@ import subprocess
 # external libs
 import gffutils
 import pysam
-import scanpy as sc
 import numpy as np
 
 start = time.time()

@@ -51,7 +51,7 @@ More details about this tooling in the help command.
 ## --help
 
 ```
-usage: process.py [-h] [-c SCORE_CLIENT] [-m MANIFEST] -s SEQ_FILE_DIR -f GFF -a ANNOTATION_FILE [ANNOTATION_FILE ...] [-o OUTPUT_DIR] -g GENES [GENES ...]
+usage: process.py [-h] [-c SCORE_CLIENT] [-m MANIFEST] -s SEQ_FILE_DIR -f GFF -a ANNOTATION_FILE [ANNOTATION_FILE ...] [-n FILENAME_HEADER] [-b SUBJECT_HEADER] [-o OUTPUT_DIR] [-sc SINGLE_CELL] -g GENES [GENES ...]
 
 Script to count reads for exons and junctions of a given gene
 
@@ -66,8 +66,14 @@ options:
   -f GFF, --gff GFF     gff3 file
   -a ANNOTATION_FILE [ANNOTATION_FILE ...], --annotation-file ANNOTATION_FILE [ANNOTATION_FILE ...]
                         annotation file(s) providing more info about samples, must contain a file_name field
+  -n FILENAME_HEADER, --filename-header FILENAME_HEADER
+                        Field name in the annotation file for the file name (optional)
+  -b SUBJECT_HEADER, --subject-header SUBJECT_HEADER
+                        Field name in the annotation file for the subject id (optional)
   -o OUTPUT_DIR, --output-dir OUTPUT_DIR
                         Output directory
+  -sc SINGLE_CELL, --single-cell SINGLE_CELL
+                        bool where if true processes alignment data as single cell
   -g GENES [GENES ...], --genes GENES [GENES ...]
                         Ensembl gene ID, or list of gene ID's
 ```
@@ -83,9 +89,7 @@ The script does a few things to make it compatible with the isoform inspector, t
 
 ## Quickstart
 
-**coming soon**
-
-If you'd just like to see the project in action, the repository comes pre-equipped with some quickstart files, found in public/data.
+If you'd just like to see the project in action, the repository comes pre-equipped with a some quickstart file, found in public/data.
 
 ## Future work
 

@@ -43,17 +43,17 @@ Follow the instructions on the README file of the linked repository to create th
 
 ## Quickstart
 
-**coming soon**
-
 If you'd just like to see the project in action, the repository comes pre-equipped with some quickstart files.
 
 1. Load the plugin into your JBrowse steps and ensure you have Gencode v19 (for this demo data) in your JBrowse config (or use the config from the project itself).
 
 2. Navigate on a linear genome view to the gene `PSME4` using the search function (or navigate to location `2:54,091,141..54,197,223`).
 
-3. Right click on the gene and select 'Open in Isoform Inspector'
+3. Right click on the PSME4 gene and select 'Open in Isoform Inspector'.
 
-4. Explore the tool! This should give you an idea of how to use the tool and how you might load your own data in for analysis.
+4. Use the Open File functionality to select the `ENSG00000068878.10_PSME4_subj_observ.json` file found in this repository under public/data.
+
+5. Explore the tool! This should give you an idea of how to use the tool and how you might load your own data in for analysis.
 
 ## Author note
 
