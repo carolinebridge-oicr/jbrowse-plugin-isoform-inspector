@@ -6,7 +6,6 @@ import json
 import argparse
 import random as rd
 from re import sub
-from re import search
 import time
 import subprocess
 
@@ -29,7 +28,7 @@ def snake_case(s):
     sub('([A-Z]+)', r' \1',
     s.replace('-', ' '))).split()).lower()
 
-def parse_anno(annotation_files) -> dict:
+def parse_anno(annotation_files, filename_header, subject_header) -> dict:
   global sample_id_header
   annotations = {}
   for anno in annotation_files:
@@ -42,9 +41,9 @@ def parse_anno(annotation_files) -> dict:
         if file_name_header == '':
           for key in row.keys():
             snake_field = snake_case(key)
-            if (snake_field == 'file_name'):
+            if (snake_field == filename_header or key == filename_header):
               file_name_header = key
-            if (snake_field == 'subject_id' or snake_field == 'sample_id' or snake_field == 'object_id'): # TODO: barcode for single cell?
+            if (snake_field == subject_header or key == subject_header):
               sample_id_header = key
         if file_name_header == '':
           raise Exception(f"Annotation file '{anno}' does not contain required 'filename' field.")
@@ -127,14 +126,13 @@ def add_introns_rm_cds_utr_start_stop_codon(gff):
   return new_gff_name
 
 def parse_gff3(gff_raw, gene_id):
-  if not os.path.isfile(f'{gff_raw}.with-introns.no-cds-utr-stop-start.gff3'):
-    # removes utr start stop codons
-    gff = add_introns_rm_cds_utr_start_stop_codon(gff_raw)
-  else:
-    gff = f'{gff_raw}.with-introns.no-cds-utr-stop-start.gff3'
-
+  gff = f'{gff_raw}.with-introns.no-cds-utr-stop-start.gff3'
   db_filename = f'{gff}.db'
+
   if not os.path.isfile(db_filename):
+    if not os.path.isfile(gff):
+      # removes utr start stop codons
+      gff = add_introns_rm_cds_utr_start_stop_codon(gff_raw)
     gff_db = gffutils.create_db(gff, db_filename)
   else:
     gff_db = gffutils.FeatureDB(db_filename)
@@ -162,7 +160,7 @@ def parse_gff3(gff_raw, gene_id):
     try:
       [status] = f.attributes['transcript_status']
     except:
-      status = 'UNDEFINED'
+      status = ''
     gene['junctions'][f"{chr}:{start}-{end}"] = {
       "status": status,
       "chr": chr,
@@ -177,7 +175,7 @@ def parse_gff3(gff_raw, gene_id):
     try:
       [status] = f.attributes['transcript_status']
     except:
-      status = 'UNDEFINED'
+      status = ''
     gene['exons'][f"{chr}:{start}-{end}"] = {
       "status": status,
       "chr": chr,
@@ -202,21 +200,20 @@ def output_anno(anno):
   return output
 
 def get_junction_count(samfile, chr, start, end):
-  # currently get_junction_count counts the reads for all canonical exons for the reference genome
-  count = 0
-  for seq in samfile.fetch(chr, start, end):
-    ref_start = seq.reference_start + 1
-    for seg in seq.cigar:
-      op, size = seg
-      if op == 3: # intron, skipped region from the reference
-          ref_end = ref_start + size - 1
-          if ref_start == start and ref_end == end:
-              count += 1
+  # TODO: reworking this for later
+  # count = 0
+  # for seq in samfile.fetch(chr, start, end):
+  #   ref_start = seq.reference_start + 1
+  #   for seg in seq.cigar:
+  #     op, size = seg
+  #     if op == 3: # intron, skipped region from the reference
+  #         ref_end = ref_start + size - 1
+  #         if ref_start == start and ref_end == end:
+  #             count += 1
 
-      if op in (0, 2, 3): # increase the ref_start for match, deletion, or skipped reference
-          ref_start += size
-
-  return count
+  #     if op in (0, 2, 3): # increase the ref_start for match, deletion, or skipped reference
+  #         ref_start += size
+  return samfile.count(chr, start, end)
 
 def get_exon_count(samfile, chr, start, end):
   # TODO: might need to pass the count_cov operation through the json file to the front end
@@ -356,11 +353,13 @@ def extract_read_counts(f, annotations, gene):
   # checks if the annotations file exists
   seq_filename = os.path.basename(f)
 
-  if seq_filename not in annotations:
+  if seq_filename not in annotations and seq_filename.split('.')[0] not in annotations:
     # if no annotations file is given subject ids are assigned a random integer
     subj_annotations = []
     subject_id = f'null-id-{rd.randint(0,100)}'
   else:
+    if seq_filename not in annotations:
+      seq_filename = seq_filename.split('.')[0]
     anno = annotations[seq_filename]
     subject_id = anno[sample_id_header] # figure out what this looks like for anndata
 
@@ -435,7 +434,7 @@ def extract_read_counts(f, annotations, gene):
 
   return subject
 
-def main(score_client, manifest, seq_file_output_dir, gff, annotation_files, output_dir, single_cell, genes):
+def main(score_client, manifest, seq_file_output_dir, gff, annotation_files, filename_header, subject_header, output_dir, single_cell, genes):
   gene_list = genes
   # genes is either a single gene id, a list of gene ids, or a .txt file of gene names (space delimited)
   if ('.txt' in genes[0]):
@@ -463,7 +462,7 @@ def main(score_client, manifest, seq_file_output_dir, gff, annotation_files, out
 
   print('Operation 2/3: Parsing annotations file...', flush=True)
   # parse annotation files, which are TSV files providing additional information about sequencing files
-  annotations = parse_anno(annotation_files)
+  annotations = parse_anno(annotation_files, filename_header, subject_header)
 
   if (score_client):
     # user is bulk processing while downloading
@@ -544,11 +543,9 @@ def main(score_client, manifest, seq_file_output_dir, gff, annotation_files, out
       "subjects": subjects_arr
     }
 
-    output_file = os.path.join(output_dir, f"{gene_id}_subj_observ.json")
+    output_file = os.path.join(output_dir, f"{gene_id}_{gene_name}_subj_observ.json")
 
     # so as to not overwrite other files with other annotation sets for that gene
-    # isoform inspector will choose the one without a _n appended
-    # TODO: eventually the front end should be able to process a variety of .jsons for the same gene
     i = 1
     while (os.path.exists(output_file)):
       output_file = os.path.join(output_dir, f"{gene_id}_{gene_name}_subj_observ_{i}.json")
@@ -573,6 +570,10 @@ if __name__ == '__main__':
                     help='gff3 file', required=True)
   parser.add_argument('-a', '--annotation-file', type=str, nargs='+',
                     help='annotation file(s) providing more info about samples, must contain a file_name field', required=True)
+  parser.add_argument('-n', '--filename-header', type=str, default='file_name',
+                    help='Field name in the annotation file for the file name (optional)')
+  parser.add_argument('-b', '--subject-header', type=str, default='subject_id',
+                  help='Field name in the annotation file for the subject id (optional)')
   parser.add_argument('-o', '--output-dir', type=str, default='../public/data',
                     help='Output directory')
   parser.add_argument('-sc', '--single-cell', type=bool, default=False,
@@ -581,4 +582,4 @@ if __name__ == '__main__':
                     help='Ensembl gene ID, or list of gene ID\'s', required=True)
   args = parser.parse_args()
 
-  main(args.score_client, args.manifest, args.seq_file_dir, args.gff, args.annotation_file, args.output_dir, args.single_cell, args.genes)
+  main(args.score_client, args.manifest, args.seq_file_dir, args.gff, args.annotation_file, args.filename_header, args.subject_header, args.output_dir, args.single_cell, args.genes)

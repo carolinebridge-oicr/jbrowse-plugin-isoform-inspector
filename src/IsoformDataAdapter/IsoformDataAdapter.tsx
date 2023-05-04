@@ -23,8 +23,7 @@ export async function fetchLocalDataFromName(
   geneId: string,
   geneModel: any,
 ) {
-  const dataPath = `public/data/${geneId}_${geneName}_subj_observ.json`
-  // const dataPath = `data/${geneId}_subj_observ.json`
+  const dataPath = `data/${geneId}_${geneName}_subj_observ.json`
 
   const response = await fetch(dataPath, {
     headers: {

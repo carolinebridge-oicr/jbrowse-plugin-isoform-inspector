@@ -66,6 +66,7 @@ export default class IsoformInspectorPlugin extends Plugin {
                             )
                             session.addView('IsoformInspectorView', {
                               geneId: geneId,
+                              geneName: geneName,
                               geneModel: geneModel,
                               isImport: true,
                             })

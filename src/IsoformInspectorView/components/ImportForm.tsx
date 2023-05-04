@@ -37,13 +37,12 @@ export default function MultiWiggleWidget({ model }: { model: any }) {
     model.files ? model.files.map((file: any) => file.source) : [],
   )
   const [selectedFiles, setSelectedFiles] = useState([''])
-  const geneName = 'TP53' // TODO: from model
 
   return (
     <div className={classes.paper}>
       <div className={classes.container}>
         <Typography variant="subtitle1">
-          Opening file for: <b>{geneName}</b>
+          Opening file for: <b>{model.geneName}</b>
         </Typography>
         <Button className={classes.button} variant="outlined" component="label">
           Choose Files from your computer

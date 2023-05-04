@@ -69,6 +69,7 @@ export default function IsoformInspectorView() {
       readType: 'raw',
       isImport: true,
       data: types.frozen(),
+      geneName: '',
     })
     .volatile(() => ({
       // data: undefined as unknown as any,
@@ -131,6 +132,9 @@ export default function IsoformInspectorView() {
       },
       setReadDepth(readDepth: number) {
         self.readDepth = readDepth
+      },
+      setGeneName(name: string) {
+        self.geneName = name
       },
       getAnnotationsConfig() {
         return self.annotationsConfig
