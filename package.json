@@ -41,7 +41,7 @@
     "prebuild": "npm-run-all clean",
     "build": "rollup --config",
     "browse": "npm-run-all jbrowse:*",
-    "jbrowse:configure": "shx cp config.json .jbrowse/config.json",
+    "jbrowse:configure": "shx cp config.json .jbrowse/config.json && shx cp cypress/fixtures/loaded.json .jbrowse/loaded.json",
     "jbrowse:serve": "cross-var serve --listen $npm_package_config_browse_port .jbrowse",
     "test": "jest",
     "test:e2e": "cross-var start-test \"npm-run-all --parallel start browse\" \"$npm_package_config_port|$npm_package_config_browse_port\" \"npm-run-all cypress:run\"",

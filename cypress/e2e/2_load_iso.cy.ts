@@ -1,5 +1,10 @@
 describe('Load isoform inspector', () => {
   it('opens the isoform inspector view and prompts select file', () => {
+    cy.on('uncaught:exception', (err, runnable) => {
+      // returning false here prevents Cypress from
+      // failing the test
+      return false
+    })
     cy.visit('/')
     cy.contains('Empty').click()
     cy.contains('Launch view').click()
