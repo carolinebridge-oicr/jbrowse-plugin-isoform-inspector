@@ -309,10 +309,11 @@ export default function IsoformInspectorView() {
         location === 'row'
           ? (self.showRows = !self.showRows)
           : (self.showCols = !self.showCols)
+        const check = location === 'row' ? self.showRows : self.showCols
         self.getAndSetNivoData()
         session.notify(
           `${location === 'row' ? 'Rows' : 'Columns'} with no reads have been ${
-            self.showCols ? 'revealed' : 'hidden'
+            check ? 'revealed' : 'hidden'
           } on the heatmap`,
           'info',
         )

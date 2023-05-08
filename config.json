@@ -9,7 +9,9 @@
     {
       "name": "hg19",
       "displayName": "Homo sapiens (hg19)",
-      "aliases": ["GRCh37"],
+      "aliases": [
+        "GRCh37"
+      ],
       "sequence": {
         "type": "ReferenceSequenceTrack",
         "trackId": "Pd8Wh30ei9R",
@@ -53,7 +55,9 @@
     },
     {
       "name": "hg38",
-      "aliases": ["GRCh38"],
+      "aliases": [
+        "GRCh38"
+      ],
       "sequence": {
         "type": "ReferenceSequenceTrack",
         "trackId": "P6R5xbRqRr",
@@ -89,8 +93,12 @@
       "type": "FeatureTrack",
       "trackId": "ncbi_refseq_109_hg38_latest",
       "name": "NCBI RefSeq (GFF3Tabix)",
-      "assemblyNames": ["hg38"],
-      "category": ["Annotation"],
+      "assemblyNames": [
+        "hg38"
+      ],
+      "category": [
+        "Annotation"
+      ],
       "adapter": {
         "type": "Gff3TabixAdapter",
         "gffGzLocation": {
@@ -109,8 +117,12 @@
       "type": "FeatureTrack",
       "trackId": "nclist_genes_hg19",
       "name": "Gencode v19",
-      "assemblyNames": ["hg19"],
-      "category": ["Annotation"],
+      "assemblyNames": [
+        "hg19"
+      ],
+      "category": [
+        "Annotation"
+      ],
       "adapter": {
         "type": "NCListAdapter",
         "rootUrlTemplate": {
@@ -163,8 +175,12 @@
       "type": "FeatureTrack",
       "trackId": "gencode_nclist_hg38",
       "name": "Gencode v32",
-      "assemblyNames": ["hg38"],
-      "category": ["Annotation"],
+      "assemblyNames": [
+        "hg38"
+      ],
+      "category": [
+        "Annotation"
+      ],
       "adapter": {
         "type": "NCListAdapter",
         "rootUrlTemplate": {
@@ -230,7 +246,9 @@
         "uri": "https://jbrowse.org/genomes/hg19/trix/meta.json",
         "locationType": "UriLocation"
       },
-      "assemblyNames": ["hg19"]
+      "assemblyNames": [
+        "hg19"
+      ]
     },
     {
       "type": "TrixTextSearchAdapter",
@@ -247,7 +265,9 @@
         "uri": "https://jbrowse.org/genomes/GRCh38/trix/meta.json",
         "locationType": "UriLocation"
       },
-      "assemblyNames": ["hg38"]
+      "assemblyNames": [
+        "hg38"
+      ]
     }
   ]
 }

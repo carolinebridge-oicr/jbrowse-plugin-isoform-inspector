@@ -47,6 +47,7 @@ export default function MultiWiggleWidget({ model }: { model: any }) {
         <Button className={classes.button} variant="outlined" component="label">
           Choose Files from your computer
           <input
+            data-testid="isoform-file-select"
             type="file"
             hidden
             multiple
@@ -79,6 +80,7 @@ export default function MultiWiggleWidget({ model }: { model: any }) {
           <Select
             multiple
             native
+            data-testid="iso-multi-select"
             value={selectedFiles}
             // @ts-ignore Typings are not considering `native`
             onChange={(e: any) => {
@@ -98,7 +100,7 @@ export default function MultiWiggleWidget({ model }: { model: any }) {
           >
             {files.map((file: string) => {
               return (
-                <option key={file} value={file}>
+                <option key={file} value={file} selected>
                   {file}
                 </option>
               )

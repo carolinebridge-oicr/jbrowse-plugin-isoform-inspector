@@ -64,6 +64,7 @@ export default observer(function ToggleAnnotationsDialog({
         const [state, setState] = useState(param.value)
         return (
           <Checkbox
+            data-testid="annotation-checkbox"
             checked={state}
             onChange={(event) => {
               setState(event.target.checked)

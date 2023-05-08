@@ -24,6 +24,7 @@ export const Dendrogram = ({
   clust(root)
   return (
     <div
+      data-testid="dendrogram"
       onMouseEnter={(e) => {
         model.setCurrentPanel('none')
       }}

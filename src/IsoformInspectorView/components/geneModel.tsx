@@ -68,7 +68,7 @@ export const GeneModel = ({
       </div>
       <svg width={width} height={realHeight}>
         {model.showCanonicalExons ? (
-          <g>
+          <g data-testid="canonical-gene-model">
             <g>
               {model.canonicalExons.map((exon: any) => {
                 return (
@@ -242,7 +242,12 @@ export const GeneModel = ({
               )}
             </g>
             {model.showCovPlot ? (
-              <CoveragePlot model={model} height={realHeight} width={width} />
+              <CoveragePlot
+                data-testid="coverage-plot"
+                model={model}
+                height={realHeight}
+                width={width}
+              />
             ) : null}
           </g>
         ) : null}

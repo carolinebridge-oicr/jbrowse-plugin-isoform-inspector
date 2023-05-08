@@ -321,12 +321,12 @@ const ModeToggle = observer(({ model }: { model: any }) => {
       }}
       aria-label="mode"
     >
-      <ToggleButton value="junction">
+      <ToggleButton value="junction" data-testid="toggle-junction">
         {mode === 'junction'
           ? `Splice junction read counts (${model.readType})`
           : '...'}
       </ToggleButton>
-      <ToggleButton value="exon">
+      <ToggleButton value="exon" data-testid="toggle-exon">
         {mode === 'exon'
           ? `Canonical exon read counts (${model.readType})`
           : '...'}

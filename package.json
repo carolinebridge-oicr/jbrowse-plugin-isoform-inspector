@@ -23,6 +23,11 @@
       }
     }
   },
+  "browserslist": [
+    "last 1 version",
+    "> 1%",
+    "not dead"
+  ],
   "scripts": {
     "setup": "npm-run-all setup:*",
     "setup:file": "ts-node scripts/setup.ts",
@@ -36,7 +41,7 @@
     "prebuild": "npm-run-all clean",
     "build": "rollup --config",
     "browse": "npm-run-all jbrowse:*",
-    "jbrowse:configure": "shx cp jbrowse_config.json .jbrowse/config.json",
+    "jbrowse:configure": "shx cp config.json .jbrowse/config.json",
     "jbrowse:serve": "cross-var serve --listen $npm_package_config_browse_port .jbrowse",
     "test": "jest",
     "test:e2e": "cross-var start-test \"npm-run-all --parallel start browse\" \"$npm_package_config_port|$npm_package_config_browse_port\" \"npm-run-all cypress:run\"",
@@ -94,7 +99,7 @@
     "chalk": "^4.1.2",
     "cross-env": "^7.0.3",
     "cross-var": "^1.1.0",
-    "cypress": "^6.2.1",
+    "cypress": "12.11.0",
     "d3-hierarchy": "^3.1.2",
     "eslint": "^7.5.0",
     "eslint-config-prettier": "^8.3.0",
